@@ -1,0 +1,942 @@
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 02:25:46] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:05:50] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:05:50] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:06:56] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:06:57] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:07:34] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:07:34] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:08:54] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:08:54] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:30:07] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:30:07] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:31:13] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:41:49] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 03:41:49] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+/root/bzwl/excel_generation/api_96.py:464: SyntaxWarning: invalid escape sequence '\{'
+  today_file = f"{path}\{today.strftime('%Y%m%d')}.txt"
+/root/bzwl/excel_generation/api_96.py:468: SyntaxWarning: invalid escape sequence '\{'
+  yesterday_file = f"{path}\{yesterday.strftime('%Y%m%d')}.txt"
+/root/bzwl/excel_generation/api_96.py:1361: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH1}\hiwo物料-96-01.xlsx",
+/root/bzwl/excel_generation/api_96.py:1372: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH1}\hiwo物料-96-02.xlsx",
+/root/bzwl/excel_generation/api_96.py:1542: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH1}\hiwo任务05-96-01-02.xlsx",
+/root/bzwl/excel_generation/api_96.py:1551: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH1}\hiwo任务05-96-01-02.xlsx",
+/root/bzwl/excel_generation/api_96.py:1625: SyntaxWarning: invalid escape sequence '\h'
+  excel_name = f"{crystallize_BASE_PATH}\hiwo-任务3-{num + 1}.xlsx"
+/root/bzwl/excel_generation/api_96.py:1630: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH}\hiwo-物料3-{num + 1}.xlsx"
+/root/bzwl/excel_generation/api_96.py:1661: SyntaxWarning: invalid escape sequence '\h'
+  excel_name = f"{crystallize_BASE_PATH}\hiwo-任务2-1.xlsx"
+/root/bzwl/excel_generation/api_96.py:1668: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH}\hiwo-物料2-1.xlsx"
+/root/bzwl/excel_generation/api_96.py:1725: SyntaxWarning: invalid escape sequence '\h'
+  excel_name = f"{crystallize_BASE_PATH}\hiwo-任务2-{num}.xlsx"
+/root/bzwl/excel_generation/api_96.py:1732: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH}\hiwo-物料2-{num}.xlsx"
+/root/bzwl/excel_generation/api_96.py:1745: SyntaxWarning: invalid escape sequence '\h'
+  excel_name = f"{crystallize_BASE_PATH}\hiwo-任务3-1.xlsx"
+/root/bzwl/excel_generation/api_96.py:1751: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH}\hiwo-物料3-1.xlsx"
+/root/bzwl/excel_generation/api_96.py:1812: SyntaxWarning: invalid escape sequence '\h'
+  excel_name = f"{crystallize_BASE_PATH}\hiwo-任务3-{num}.xlsx"
+/root/bzwl/excel_generation/api_96.py:1817: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH}\hiwo-物料3-{num}.xlsx"
+/root/bzwl/excel_generation/api_96.py:1831: SyntaxWarning: invalid escape sequence '\h'
+  excel_name = f"{crystallize_BASE_PATH}\hiwo-任务2-1.xlsx"
+/root/bzwl/excel_generation/api_96.py:1838: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH}\hiwo-物料2-1.xlsx"
+/root/bzwl/excel_generation/api_96.py:1896: SyntaxWarning: invalid escape sequence '\h'
+  excel_name = f"{crystallize_BASE_PATH}\hiwo-任务2-{num}.xlsx"
+/root/bzwl/excel_generation/api_96.py:1903: SyntaxWarning: invalid escape sequence '\h'
+  f"{crystallize_BASE_PATH}\hiwo-物料2-{num}.xlsx"
+/root/bzwl/excel_generation/api_96.py:2298: SyntaxWarning: invalid escape sequence '\s'
+  f"{crystallize_BASE_PATH1}\sowo物料.xlsx",
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 05:34:38] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:34:38] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:35:16] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:35:16] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+Traceback (most recent call last):
+  File "/root/bzwl/excel_generation/excel_api.py", line 25, in <module>
+    from  api_8 import main as main_8
+  File "/root/bzwl/excel_generation/api_8.py", line 3551
+    main('b606f8d9f73d4153bb532ff297533814',ddd,1)
+IndentationError: unexpected indent
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 05:43:54] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:43:54] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:44:25] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:44:25] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:45:25] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:45:25] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+ * Detected change in '/root/bzwl/excel_generation/excel_api.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 05:47:57] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+127.0.0.1 - - [15/Apr/2026 05:47:57] "[35m[1mPOST /api/synthesis_excel HTTP/1.1[0m" 500 -
+ * Detected change in '/root/bzwl/excel_generation/接口请求.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/接口请求.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 06:02:29] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2026 06:12:51] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: hiwo-物料1-1.xlsx
+已删除Excel文件: sowo-物料1-1.xlsx
+已删除Excel文件: sowo-任务1-2.xlsx
+已删除Excel文件: hiwo-物料2-1.xlsx
+已删除Excel文件: hiwo-任务2-1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: sowo-物料2-1.xlsx
+已删除Excel文件: hiwo-任务1-1.xlsx
+已删除Excel文件: sowo-任务1-1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260415-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260415-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 07:05:20] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [15/Apr/2026 07:58:20] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260415-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260415-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 08:31:12] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260415-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+ * Restarting with stat
+Traceback (most recent call last):
+  File "/root/bzwl/excel_generation/excel_api.py", line 25, in <module>
+    from  api_8 import main as main_8
+  File "/root/bzwl/excel_generation/api_8.py", line 256
+    start_time = time.time()
+    ^^^^^^^^^^
+IndentationError: expected an indented block after function definition on line 254
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [15/Apr/2026 09:29:41] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260415-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+处理成功 hiwo-任务1.xlsx
+处理成功 Materials-stack4列.xlsx
+处理成功 sowo-物料1.xlsx
+处理成功 sowo-任务1.xlsx
+处理成功 信息表格.xlsx
+处理成功 hiwo-物料1.xlsx
+完成！成功 6/6，耗时 4.99 秒
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [16/Apr/2026 02:48:40] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260416-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: hiwo-任务1.xlsx
+修复成功: Materials-stack4列.xlsx
+修复成功: sowo-物料1.xlsx
+修复成功: sowo-任务1.xlsx
+修复成功: 信息表格.xlsx
+修复成功: hiwo-物料1.xlsx
+完成，成功 6/6，耗时 4.25s
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/duibi.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/duibi.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/duibi.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/duibi.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/duibi.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/duibi.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/duibi.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/repair/repair_excel.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+Traceback (most recent call last):
+  File "/root/bzwl/excel_generation/excel_api.py", line 25, in <module>
+    from  api_8 import main as main_8
+  File "/root/bzwl/excel_generation/api_8.py", line 39, in <module>
+    from openpyxl.xml.constants import XLTM_NS, XL_NS
+ImportError: cannot import name 'XLTM_NS' from 'openpyxl.xml.constants' (/root/miniconda3/envs/ssd-cloud-lab/lib/python3.12/site-packages/openpyxl/xml/constants.py)
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [16/Apr/2026 08:56:41] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [16/Apr/2026 09:00:20] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [16/Apr/2026 09:06:56] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260416-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260416-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260416-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [17/Apr/2026 07:29:06] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [17/Apr/2026 07:53:45] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [18/Apr/2026 02:16:39] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [18/Apr/2026 03:04:59] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [19/Apr/2026 08:26:33] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [19/Apr/2026 08:46:12] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [19/Apr/2026 08:48:07] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [19/Apr/2026 09:00:54] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260417-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260417-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260418-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1-1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260418-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1-1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1-1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+已删除Excel文件: sowo-任务1-1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1-1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260419-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1-1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1-1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+已删除Excel文件: sowo-任务1-1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1-1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260419-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1-1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1-1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+已删除Excel文件: sowo-任务1-1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1-1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260419-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1-1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1-1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+已删除Excel文件: sowo-任务1-1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1-1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260419-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1-1.xlsx
+批量修复完成: 成功 2/2
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [20/Apr/2026 03:24:35] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1-1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+已删除Excel文件: sowo-任务1-1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+已将 HopperStack 的 B2 修改为 '20260420-001'，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [24/Apr/2026 01:19:12] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1.xlsx
+批量修复完成: 成功 2/2
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [24/Apr/2026 06:27:11] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [24/Apr/2026 06:35:33] "POST /api/synthesis_excel HTTP/1.1" 200 -
+ * Detected change in '/root/bzwl/excel_generation/api_8.py', reloading
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1.xlsx
+已删除Excel文件: sowo-任务1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1-1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1-1.xlsx
+批量修复完成: 成功 2/2
+已删除Excel文件: hiwo-任务1.xlsx
+已删除Excel文件: Materials-stack4列.xlsx
+已删除Excel文件: sowo-物料1-1.xlsx
+已删除Excel文件: 信息表格.xlsx
+已删除Excel文件: hiwo-物料1.xlsx
+已删除Excel文件: sowo-任务1-1.xlsx
+文件已成功复制到: ./generation_zy/hiwo-物料2.xlsx
+文件已成功复制到: ./generation_zy/hiwo-任务2.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+文件已成功复制到: ./generation_zy/sowo-物料1-1.xlsx
+处理完成，保存至: ./generation_zy/Materials-stack4列.xlsx
+处理完成，结果已保存到: ./generation_zy/信息表格.xlsx
+修复成功: ./generation_zy/hiwo-任务1.xlsx
+修复成功: ./generation_zy/sowo-任务1-1.xlsx
+批量修复完成: 成功 2/2
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_24.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_48.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Detected change in '/root/bzwl/excel_generation/api_96.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+ * Serving Flask app 'excel_api'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:10014
+ * Running on http://10.2.130.232:10014
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 125-920-384
+127.0.0.1 - - [24/Apr/2026 07:17:19] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [25/Apr/2026 02:33:42] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [25/Apr/2026 02:38:38] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [25/Apr/2026 02:48:25] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [25/Apr/2026 02:53:55] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [25/Apr/2026 03:03:32] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [25/Apr/2026 03:13:54] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [25/Apr/2026 03:52:37] "POST /api/synthesis_excel HTTP/1.1" 200 -
+127.0.0.1 - - [28/Apr/2026 02:18:08] "POST /api/synthesis_excel HTTP/1.1" 200 -

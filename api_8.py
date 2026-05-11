@@ -33,19 +33,6 @@ from pathlib import Path
 import aspose.cells as ac
 
 
-from  api_24 import main as main_24
-from  api_48 import main as main_48
-from  api_96 import main as main_96
-# BASE_PATH = r"D:/api/python/表格生成/逆合成"
-# BASE_PATH1 = r"D:/api/python/模板/逆合成"
-# crystallize_BASE_PATH = r"D:/api/python/表格生成/结晶平台"
-# crystallize_BASE_PATH1 = r"D:/api/python/模板/结晶平台"
-# # 常量定义
-# BASE_PATH = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/表格生成/逆合成"
-# BASE_PATH1 = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/模板/逆合成"
-# crystallize_BASE_PATH = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/表格生成/结晶平台"
-# crystallize_BASE_PATH1 = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/模板/结晶平台"
-
 BASE_PATH = r"./generation_zy"
 BASE_PATH1 = r"./逆合成"
 crystallize_BASE_PATH = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/表格生成/结晶平台"
@@ -761,7 +748,7 @@ class ReactionProcessor:
             # 添加物料表信息
             self.data_list_24, self.data_list_12 = self._create_mate_info()
             # 添加任务表信息
-            self._create_w11_task()
+            transfer_records_12, transfer_records_24, transfer_records_2 = self._create_w11_task()
             # 添加任务配置
             self._create_task_configuration()
             # 添加稀释数据
@@ -769,22 +756,28 @@ class ReactionProcessor:
             # 添加萃取
             self._create_task_extract()
             # 添加sowo物料数据
-            self._create_sowo_edit_stuff()
+            excel_list,excel_list_2 = self._create_sowo_edit_stuff()
             # 添加sowo任务数据
             self._create_mate_msg()
+            #修改堆栈表
+            self.modify_stack_table(transfer_records_12, transfer_records_24, transfer_records_2,BASE_PATH1,BASE_PATH)
+            self.write_codes_to_inner_hopper_stack(fr"{BASE_PATH}/Materials-stack4列.xlsx",fr"{BASE_PATH}/Materials-stack4列.xlsx",excel_list,excel_list_2)
+
         elif self.type == 2:
             # 重新写 函数 生成出表格
             self.data_list_24, self.data_list_12 = self._create_crystallize_mate_info()
             # 添加任务表信息
-            self._create_crystallize_wf05_task()
+            transfer_records_12, transfer_records_24, transfer_records_2 = self._create_crystallize_wf05_task()
 
             # 生成温度梯度表格
             self._create_crystallize_task_configuration()
 
             # 添加sowo物料数据
-            self._create_sowo_crystallize_edit_stuff()
+            excel_list,excel_list_2 = self._create_sowo_crystallize_edit_stuff()
             # 添加sowo任务数据
             self._create_mate_msg()
+            self.modify_stack_table(transfer_records_12, transfer_records_24, transfer_records_2,crystallize_BASE_PATH1,crystallize_BASE_PATH)
+            self.write_codes_to_inner_hopper_stack(fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",excel_list,excel_list_2)
 
     def _create_excel_xxx(self, input_path, output_path, rows):
         if self.type == 1:
@@ -1238,88 +1231,6 @@ class ReactionProcessor:
 
         return result_1, data_list_12
 
-    # def process_plate_stack(self,
-    #         file_path: str,
-    #         output_path: str,
-    #         transfer_records_12: list,
-    #         transfer_records_24: list,
-    #         transfer_records_2: list,
-    #         plate_type: str,
-    #         condition: dict,
-    #         gun_head_dict: dict,
-    #         Task_type =1
-    # ):
-    #     """
-    #     处理 PlateStack 子表：
-    #     1. 根据三个列表的长度标黄特定单元格。
-    #     2. 根据 plate_type 修改 D2, E2, F2 的值。
-    #     """
-    #     wb = openpyxl.load_workbook(file_path)
-    #     if "PlateStack" not in wb.sheetnames:
-    #         raise ValueError("工作簿中不存在 'PlateStack' 子表")
-    #     ws = wb["PlateStack"]
-    #
-    #     yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-    #
-    #     # ========== 第一部分：标黄规则 ==========
-    #     if len(transfer_records_12) > 0:
-    #         ws["E3"].fill = yellow_fill
-    #
-    #     len_24 = len(transfer_records_24)
-    #     if Task_type ==1:
-    #         if len_24 > 0 and len_24 < 6:
-    #             ws["B4"].fill = yellow_fill
-    #         elif len_24 > 6:
-    #             ws["E4"].fill = yellow_fill
-    #             ws["B5"].fill = yellow_fill
-    #             if len(transfer_records_2) > 0:
-    #                 ws["B4"].fill = yellow_fill
-    #     else:
-    #         if len_24 > 0 and len_24 < 6:
-    #             ws["B4"].fill = yellow_fill
-    #         elif len_24 > 6 and len_24 < 12:
-    #             ws["B4"].fill = yellow_fill
-    #             ws["C4"].fill = yellow_fill
-    #         elif len_24 >12:
-    #             ws["B4"].fill = yellow_fill
-    #             ws["C4"].fill = yellow_fill
-    #             ws["D4"].fill = yellow_fill
-    #
-    #
-    #     # ========== 第二部分：根据孔板类型修改 D2, E2, F2 ==========
-    #     if plate_type == "8孔":
-    #         ws["F2"] = "8孔"
-    #         ws["D2"] = "TA1-磁子分装_20ml-1"
-    #         ws["E2"] = "TA1-称量载具_20ml-1"
-    #     elif plate_type == "96孔":
-    #         ws["F2"] = "96孔"
-    #         ws["D2"] = "TA1-磁子分装_900ul-1"
-    #         ws["E2"] = "TA1-称量载具_900ul-1"
-    #     elif plate_type == '24孔':
-    #         ws["F2"] = "24孔"
-    #         if condition["experimentLog1"]["wellPlates"] == "24孔板8ml":
-    #             ws["D2"] = "TA1-磁子分装_8ml-1"
-    #             ws["E2"] = "TA1-称量载具_8ml-1"
-    #         elif condition["experimentLog1"]["wellPlates"] == "24孔板4ml":
-    #             ws["D2"] = "TA1-磁子分装_4ml-1"
-    #             ws["E2"] = "TA1-称量载具_4ml-1"
-    #         elif condition["experimentLog1"]["wellPlates"] == "24孔板2ml":
-    #             ws["D2"] = "TA1-磁子分装_2ml-1"
-    #             ws["E2"] = "TA1-称量载具_2ml-1"
-    #     else:
-    #         print(f"警告：未知的 plate_type '{plate_type}'，未修改 D2/E2/F2")
-    #
-    #     if "A05" in gun_head_dict:
-    #         ws["E6"].fill = yellow_fill
-    #     if "B05" in gun_head_dict:
-    #         ws["B7"].fill = yellow_fill
-    #     if "A04" in gun_head_dict:
-    #         ws["C7"].fill = yellow_fill
-    #     if "B04" in gun_head_dict:
-    #         ws["D7"].fill = yellow_fill
-    #
-    #     wb.save(output_path)
-    #     print(f"处理完成，保存至: {output_path}")
 
     def process_plate_stack(
             self,
@@ -1379,7 +1290,7 @@ class ReactionProcessor:
 
         wb.save(output_path)
         print(f"处理完成，保存至: {output_path}")
-    def _create_crystallize_wf05_task(self) -> None:
+    def _create_crystallize_wf05_task(self):
         """创建W05任务Excel,在结晶中只有wf05任务,把所有都写进这个里面"""
 
         hole_mapping = {}
@@ -1418,21 +1329,7 @@ class ReactionProcessor:
                 ExcelUtils.write_records_to_sheet(wb, "移液|||移液信息", transfer_records_24)
                 ExcelUtils.save_workbook(wb, crystallize_TEMPLATE_PATHS["wf05"])
 
-        # fill_cells = []
-        #
-        # if len(transfer_records_12) > 0:
-        #     fill_cells.append("C2")
-        # len_24 = len(transfer_records_24)
-        # if len_24 > 0 and len_24 <= 6:
-        #     fill_cells.append("C3")
-        # elif len_24 > 6 and len_24 <= 12:
-        #     fill_cells.append("C3")
-        #     fill_cells.append("C4")
-        # elif len_24 >12:
-        #     fill_cells.append("C3")
-        #     fill_cells.append("C4")
-        #     fill_cells.append("C5")
-
+        return transfer_records_12, transfer_records_24, transfer_records_2
         fill_cells = []
         if len(transfer_records_12) > 0:
             fill_cells.append('C2')
@@ -1455,7 +1352,7 @@ class ReactionProcessor:
             fill_cells.append("E2")
         if "B04" in self.gun_head_dict:
             fill_cells.append("E3")
-            
+
 
         self.process_plate_stack(
         file_path=fr"{crystallize_BASE_PATH1}/Materials-stack4列.xlsx",
@@ -1503,15 +1400,18 @@ class ReactionProcessor:
             filtrationForm_time = self.post_data.get('experimentLog2', []).get('filtrationForm', []).get('time', 0)
         ExcelUtils.modify_cell(wb, "任务参数配置", "M3", int(filtrationForm_time))
         for s, i in enumerate(result, 1):
-            pipette_location = 'A05'
+            target_volume = (i / 4) * 1000
+            if int(target_volume) <= 200:
+                pipette_location = 'A04'
+            else:
+                pipette_location = 'A05'
             if len(self.gun_head_dict[pipette_location]) >= 12:
-                pipette_location = 'B05'
-            try:
-                gun_head = self.gun_head_dict[pipette_location][-1]
-            except:
-                gun_head = 0
+                if pipette_location == 'A04': pipette_location = 'B04'
+                if pipette_location == 'A05': pipette_location = 'B05'
+            gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
+
             ExcelUtils.modify_row(wb, "反应板混匀|||移液信息", s + 1,
-                                  ["FY24-B01", s, "GL24-2A01", s, (i / 4) * 1000, pipette_location, gun_head],
+                                  ["FY24-B01", s, "GL24-2A01", s, target_volume, pipette_location, gun_head],
                                   start_col=1)
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)
@@ -1875,7 +1775,6 @@ class ReactionProcessor:
             record_list1 = []
             #加一个过滤逻辑3-2
             record_list2 = []
-            pipette_location = "A05"
 
             for num, list_data in enumerate(self.perforated_plate, 1):
                 # 计算每组两个键对应的值总和
@@ -1891,11 +1790,10 @@ class ReactionProcessor:
                 # 比较并取较大值的键
                 max_key = sum1 if sum1 >= sum2 else sum2
 
-                if len(self.gun_head_dict[pipette_location]) >= 12:
-                    pipette_location = "B05"
 
-                gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
                 target_volume = max_key * 1000 / 2 if max_key else 0
+
+
                 bar_code = "SS-B02"
 
                 #获取反溶剂最大剂量
@@ -1909,6 +1807,16 @@ class ReactionProcessor:
 
                 # 找出最大的weight值
                 max_weight = max(weights)* 1000 / 2 if weights else None
+                if int(max_weight) <= 200:
+                    pipette_location = 'A04'
+                else:
+                    pipette_location = 'A05'
+                if len(self.gun_head_dict[pipette_location]) >= 12:
+                    if pipette_location == 'A04': pipette_location = 'B04'
+                    if pipette_location == 'A05': pipette_location = 'B05'
+
+                gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
+
                 record = {
                     "来源孔板条码": "SS-A03",
                     "来源孔板列Y": num,
@@ -1920,14 +1828,17 @@ class ReactionProcessor:
                 }
                 record_list.append(record)
 
+                if int(target_volume) <= 200:
+                    pipette_location = 'A04'
+                else:
+                    pipette_location = 'A05'
                 if len(self.gun_head_dict[pipette_location]) >= 12:
-                    pipette_location = "B05"
+                    if pipette_location == 'A04': pipette_location = 'B04'
+                    if pipette_location == 'A05': pipette_location = 'B05'
 
-                if gun_head + 1 not in self.gun_head_dict[pipette_location]:
-                    self.gun_head_dict[pipette_location].append(gun_head + 1)
+                gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
 
                 bar_code = "SS-B02"
-                gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
                 record = {
                     "来源孔板条码": "FY24-B01",
                     "来源孔板列Y": num,
@@ -2047,10 +1958,9 @@ class ReactionProcessor:
             # ExcelUtils.modify_cell(wb, "任务参数配置", "E3", seal)
             # ExcelUtils.modify_cell(wb, "任务参数配置", "N3", "开盖" if seal == "关盖" else "不开盖")
             record_list = []
-            pipette_location = "A05"
+
             for llwc, list_data in enumerate(self.perforated_plate, 1):
-                if len(self.gun_head_dict[pipette_location]) >= 12:
-                    pipette_location = "B05"
+
                 # max_num = 0
                 # for data in list_data:
                 #     num = self.data_dict[data]
@@ -2060,11 +1970,20 @@ class ReactionProcessor:
                 #     if key_num >= max_num:
                 #         max_num = key_num
                 for key in list_data:
-                    gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
+
 
                     target_volume = int(key_dict.get(int(key), []).get("weight", ''))/2 *1000
                     target_id = int(key_dict.get(int(key), []).get("hole_id", ''))
                     bar_code = "SS-A03"
+                    if int(target_volume) <= 200:
+                        pipette_location = 'A04'
+                    else:
+                        pipette_location = 'A05'
+                    if len(self.gun_head_dict[pipette_location]) >= 12:
+                        if pipette_location == 'A04': pipette_location = 'B04'
+                        if pipette_location == 'A05': pipette_location = 'B05'
+
+                    gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
 
                     record = {
                         "来源孔板条码": bar_code,
@@ -2085,7 +2004,7 @@ class ReactionProcessor:
             ExcelUtils.save_workbook(wb, excel_name)
             self.add_excel_filter(1, 2,key_dict)
 
-    def _create_sowo_crystallize_edit_stuff(self) -> None:
+    def _create_sowo_crystallize_edit_stuff(self) :
         """创建sowoEditStuff Excel并记录物料表号"""
         # 收集所有固态记录
         all_solid_records = []
@@ -2220,9 +2139,9 @@ class ReactionProcessor:
             ExcelUtils.write_records_to_sheet(wb, "Sheet1", excel_list_2)
             ExcelUtils.write_records_to_sheet(wb, "Sheet1", [{"Code": f"{day_name}-001", "Locate": 1, "Type": 1}])
             ExcelUtils.save_workbook(wb, target_path)
-        self.write_codes_to_inner_hopper_stack(fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",excel_list,excel_list_2)
-        # self.set_hopper_b2_with_utils(fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",f"{day_name}-001")
-
+        # self.write_codes_to_inner_hopper_stack(fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",excel_list,excel_list_2)
+        # # self.set_hopper_b2_with_utils(fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",fr"{crystallize_BASE_PATH}/Materials-stack4列.xlsx",f"{day_name}-001")
+        return excel_list,excel_list_2
     def _process_12_plate(self) -> List[str]:
         """处理12孔板数据"""
         result = []
@@ -2375,22 +2294,9 @@ class ReactionProcessor:
         if len(data_24) > 18:
             """如果第二个任务的24孔板也不够用，是不是需要第三次任务？"""
             pass
-    def _create_w11_task(self) -> None:
+    def _create_w11_task(self):
         """创建W11任务Excel"""
-        # 创建孔位映射
-        # hole_mapping = {}
-        # position_counter = 1
-        #
-        # for perforated in self.perforated_plate:
-        #     # 两个反应的组：分配连续的两个位置
-        #     if len(perforated) == 2:
-        #         hole_mapping[perforated[0]] = position_counter
-        #         hole_mapping[perforated[1]] = position_counter + 1
-        #         position_counter += 2
-        #     # 单个反应的组：分配一个位置
-        #     elif len(perforated) == 1:
-        #         hole_mapping[perforated[0]] = position_counter
-        #         position_counter += 1
+
         hole_mapping = {}
         for k, perforated_ in enumerate(self.perforated_plate, 1):
             if len(perforated_) == 2:
@@ -2425,72 +2331,27 @@ class ReactionProcessor:
                 wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf05"])
                 ExcelUtils.write_records_to_sheet(wb, "移液|||移液信息", transfer_records_24)
                 ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["wf05"])
-        # fill_cells = []
-        # if len(transfer_records_12) > 0:
-        #     fill_cells.append('E3')
-        # len_24 = len(transfer_records_24)
-        # if len_24 > 0 and len_24 <= 6:
-        #
-        #     fill_cells.append('B4')
-        # elif len_24 > 6:
-        #     fill_cells.append('E4')
-        #     fill_cells.append('B5')
-        #     if len(transfer_records_2) > 0:
-        #         fill_cells.append('B4')
-        fill_cells = []
-        if len(transfer_records_12) > 0:
-            fill_cells.append('C2')
-        len_24 = len(transfer_records_24)
-        if len_24 > 0 and len_24 <= 6:
+        return  transfer_records_12, transfer_records_24, transfer_records_2
 
-            fill_cells.append('C3')
-        elif len_24 > 6 :
-            fill_cells.append('C6')
-            fill_cells.append('C7')
-            if len(transfer_records_2) > 0:
-                fill_cells.append('C3')
-        fill_cells = []
-        if len(transfer_records_12) > 0:
-            fill_cells.append('C2')
-        len_24 = len(transfer_records_24)
-        if len_24 > 0 and len_24 <= 6:
-
-            fill_cells.append('C3')
-        elif len_24 > 6 :
-            fill_cells.append('C6')
-            fill_cells.append('C7')
-            if len(transfer_records_2) > 0:
-                fill_cells.append('C3')
-
-        if "A05" in self.gun_head_dict:
-            fill_cells.append("E4")
-        if "B05" in self.gun_head_dict:
-            fill_cells.append("E5")
-        if "A04" in self.gun_head_dict:
-            fill_cells.append("E2")
-        if "B04" in self.gun_head_dict:
-            fill_cells.append("E3")
-
-
-        self.process_plate_stack(
-        file_path=fr"{BASE_PATH1}/Materials-stack4列.xlsx",
-        output_path=fr"{BASE_PATH}/Materials-stack4列.xlsx",
-        fill_cells = fill_cells,
-        plate_type='8孔',
-        condition=self.post_data,
-
-    )
     def _generate_transfer_data(self, hole_mapping: dict) -> Tuple[list, list, list]:
         """生成孔板转移数据"""
         transfer_records_12,transfer_records_24,transfer_records_2 = [],[],[]
-        pipette_location = "A05"
+
         # 处理24孔板数据
         for plate_idx, (substance1, substance2, hole_id, amount) in enumerate(self.data_list_24, 1):
+
+
+            target_volume = amount * 1000 / 2 if amount else 0
+            if int(target_volume) <= 200:
+                pipette_location = 'A04'
+            else:
+                pipette_location = 'A05'
             if len(self.gun_head_dict[pipette_location]) >= 12:
-                pipette_location = "B05"
+                if pipette_location == 'A04': pipette_location = 'B04'
+                if pipette_location == 'A05': pipette_location = 'B05'
 
             gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
-            target_volume = amount * 1000 / 2 if amount else 0
+
             if self.type == 1:
                 if self.number_tasks == 1:
                     bar_code = "SS-A03"
@@ -2673,6 +2534,39 @@ class ReactionProcessor:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)
             ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["wf11"])
 
+    def modify_stack_table(self,transfer_records_12,transfer_records_24,transfer_records_2,BASE_PATH_1,BASE_PATH_2):
+        fill_cells = []
+        if len(transfer_records_12) > 0:
+            fill_cells.append('C2')
+        len_24 = len(transfer_records_24)
+        if len_24 > 0 and len_24 <= 6:
+
+            fill_cells.append('C3')
+        elif len_24 > 6:
+            fill_cells.append('C6')
+            fill_cells.append('C7')
+            if len(transfer_records_2) > 0:
+                fill_cells.append('C3')
+
+        if "A05" in self.gun_head_dict:
+            fill_cells.append("E4")
+        if "B05" in self.gun_head_dict:
+            fill_cells.append("E5")
+        if "A04" in self.gun_head_dict:
+            fill_cells.append("E2")
+        if "B04" in self.gun_head_dict:
+            fill_cells.append("E3")
+        product_dilution_data = self.post_data["experimentLog3"].get("productDilutionData", [])
+        if product_dilution_data:
+            fill_cells.append("C4")
+        self.process_plate_stack(
+            file_path=fr"{BASE_PATH_1}/Materials-stack4列.xlsx",
+            output_path=fr"{BASE_PATH_2}/Materials-stack4列.xlsx",
+            fill_cells=fill_cells,
+            plate_type='8孔',
+            condition=self.post_data,
+
+        )
     def _create_task_internal_standard(self):
         # 内标数据
         internalStandardData = self.post_data['experimentLog3']["internalStandardData"]
@@ -2918,7 +2812,7 @@ class ReactionProcessor:
         ExcelUtils.save_workbook(wb, output_path)
         print(f"已将 {sheet_name} 的 B2 修改为 '{value}'，保存至: {output_path}")
 
-    def _create_sowo_edit_stuff(self) -> None:
+    def _create_sowo_edit_stuff(self):
         """创建sowoEditStuff Excel并记录物料表号"""
         # 收集所有固态记录
         all_solid_records = []
@@ -2938,7 +2832,7 @@ class ReactionProcessor:
 
         if os.path.exists(file_path):
             try:
-                with open(file_path, 'r') as f:
+                with open(file_path, 'r',encoding='utf-8') as f:
                     data = json.load(f, object_pairs_hook=OrderedDict)
             except json.JSONDecodeError:
                 pass  # 文件损坏时使用默认数据
@@ -3016,9 +2910,7 @@ class ReactionProcessor:
             ExcelUtils.write_records_to_sheet(wb, "Sheet1", excel_list_2)
             ExcelUtils.write_records_to_sheet(wb, "Sheet1", [{"Code": f"{day_name}-001", "Locate": 1, "Type": 1}])
             ExcelUtils.save_workbook(wb, target_path)
-        self.write_codes_to_inner_hopper_stack(fr"{BASE_PATH}/Materials-stack4列.xlsx",fr"{BASE_PATH}/Materials-stack4列.xlsx",excel_list,excel_list_2)
-        # self.set_hopper_b2_with_utils(fr"{BASE_PATH}/Materials-stack4列.xlsx",fr"{BASE_PATH}/Materials-stack4列.xlsx",f"{day_name}-001")
-
+        return excel_list,excel_list_2
     def _create_mate_msg(self) -> None:
         """创建mateMsg Excel并根据物料表号分表"""
         hole_to_coordinate = {

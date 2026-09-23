@@ -2524,6 +2524,7 @@ class ReactionProcessor:
             ws[cell].fill = yellow_fill
 
         # ========== 第二部分：修改 D2, E2, F2 的值（原有逻辑不变） ==========
+        print(plate_type)
         if plate_type == "8孔":
             ws["I2"] = "8孔"
             ws["E4"] = "TA1-磁子分装_20ml-1"
@@ -2597,7 +2598,7 @@ class ReactionProcessor:
 
     def modify_stack_table(self,transfer_records_12,transfer_records_24,transfer_records_2,BASE_PATH_1,BASE_PATH_2):
         len_24 = len(transfer_records_24)
-        CELLS = ["F4", "F3", "C5", "C4", "C3", "C2"]  # 共6个，对应 len_24 在 (0,36] 的6个区间
+        CELLS = ["F5", "F4", "C5", "C4", "C3", "C2"]  # 共6个，对应 len_24 在 (0,36] 的6个区间
 
         if len_24 > 0:
             # 计算需要前几个单元格：每6长度为一个单位，向上取整
@@ -2962,7 +2963,7 @@ class ReactionProcessor:
                 except:
                     start = 1 + age
                 ExcelUtils.modify_row(wb, "加稀释液-过滤|||移液信息", start,
-                                      ["SS-A03", internal_standard_used_rows - 1, "GL24-2A01", age, 100,
+                                      ["SS-A03", internal_standard_used_rows - 1, "GL24-2A01", age, 100/2,
                                        pipette_location, gun_head + 1], start_col=1)
                 self.usage_12_hole = internal_standard_used_rows - 1
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -3025,7 +3026,7 @@ class ReactionProcessor:
         if environment =='2':
             table_name='HopperStack'
         else:
-            if len(excel_list) >=5:
+            if len(excel_list) >5:
                 table_name = 'HopperStack'
             else:
                 table_name='TransferHopperStack'
@@ -3407,9 +3408,9 @@ class ReactionProcessor:
             wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf11"])
             procedure = data.get("procedure", {})
 
-            self._process_diluent(wb, "加稀释液-反应|||移液信息", procedure.get("diluent1"), True)
-            self._process_diluent(wb, "加稀释液-中转|||移液信息", procedure.get("diluent2"), True, "ZZ-B02")
-            self._process_diluent(wb, "加稀释液-过滤|||移液信息", procedure.get("diluent3"), False, "GL24-2A01")
+            self._process_diluent(wb, "加稀释液-反应|||移液信息", int(procedure.get("diluent1"))/2, True)
+            self._process_diluent(wb, "加稀释液-中转|||移液信息", int(procedure.get("diluent2"))/2, True, "ZZ-B02")
+            self._process_diluent(wb, "加稀释液-过滤|||移液信息", int(procedure.get("diluent3"))/2, False, "GL24-2A01")
 
             self._process_mixing(wb, procedure.get("diluent4"), procedure.get("diluent5"))
 
@@ -3448,9 +3449,9 @@ class ReactionProcessor:
             num += 1
             gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i,
-                                  ["FY24-B01", num, "ZZ-B02", num, int(diluent4) , pipette_location, gun_head + 1])
+                                  ["FY24-B01", num, "ZZ-B02", num, int(diluent4)/2 , pipette_location, gun_head + 1])
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i + 1,
-                                  ["ZZ-B02", num, "GL24-2A01", num, int(diluent5), pipette_location, gun_head + 1])
+                                  ["ZZ-B02", num, "GL24-2A01", num, int(diluent5)/2, pipette_location, gun_head + 1])
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)

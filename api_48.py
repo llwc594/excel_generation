@@ -2107,7 +2107,7 @@ class ReactionProcessor:
         if environment =='2':
             table_name='HopperStack'
         else:
-            if len(excel_list) >=5:
+            if len(excel_list) >5:
                 table_name = 'HopperStack'
             else:
                 table_name='TransferHopperStack'

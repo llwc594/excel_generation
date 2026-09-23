@@ -2671,7 +2671,7 @@ class ReactionProcessor:
                 except:
                     start = 1 + age
                 ExcelUtils.modify_row(wb, "加稀释液-过滤|||移液信息", start,
-                                      ["R12-A02", internal_standard_used_rows - 1, "GL96-2A01", age, 100,
+                                      ["R12-A02", internal_standard_used_rows - 1, "GL24-2A01", age, 100,
                                        pipette_location, gun_head + 1], start_col=1)
                 self.usage_12_hole = internal_standard_used_rows - 1
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -2740,7 +2740,7 @@ class ReactionProcessor:
         if environment =='2':
             table_name='HopperStack'
         else:
-            if len(excel_list) >=5:
+            if len(excel_list) >5:
                 table_name = 'HopperStack'
             else:
                 table_name='TransferHopperStack'
@@ -3000,7 +3000,7 @@ class ReactionProcessor:
 
             self._process_diluent(wb, "加稀释液-反应|||移液信息", procedure.get("diluent1"), True)
             self._process_diluent(wb, "加稀释液-中转|||移液信息", procedure.get("diluent2"), True, "ZZ-B02")
-            self._process_diluent(wb, "加稀释液-过滤|||移液信息", procedure.get("diluent3"), False, "GL96-2A01")
+            self._process_diluent(wb, "加稀释液-过滤|||移液信息", procedure.get("diluent3"), False, "GL24-2A01")
 
             self._process_mixing(wb, procedure.get("diluent4"), procedure.get("diluent5"))
 
@@ -3043,7 +3043,7 @@ class ReactionProcessor:
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i,
                                   ["FY24-B01", num, "ZZ-B02", num, int(diluent4) / 2, pipette_location, gun_head + 1])
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i + 1,
-                                  ["ZZ-B02", num, "GL96-2A01", num, int(diluent5), pipette_location, gun_head + 1])
+                                  ["ZZ-B02", num, "GL24-2A01", num, int(diluent5), pipette_location, gun_head + 1])
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)

@@ -2963,7 +2963,7 @@ class ReactionProcessor:
                 except:
                     start = 1 + age
                 ExcelUtils.modify_row(wb, "加稀释液-过滤|||移液信息", start,
-                                      ["SS-A03", internal_standard_used_rows - 1, "GL24-2A01", age, 100/2,
+                                      ["SS-A03", internal_standard_used_rows - 1, "GL24-2A01", age, 100,
                                        pipette_location, gun_head + 1], start_col=1)
                 self.usage_12_hole = internal_standard_used_rows - 1
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -3403,9 +3403,9 @@ class ReactionProcessor:
             wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf11"])
             procedure = data.get("procedure", {})
 
-            self._process_diluent(wb, "加稀释液-反应|||移液信息", int(procedure.get("diluent1"))/2, True)
-            self._process_diluent(wb, "加稀释液-中转|||移液信息", int(procedure.get("diluent2"))/2, True, "ZZ-B02")
-            self._process_diluent(wb, "加稀释液-过滤|||移液信息", int(procedure.get("diluent3"))/2, False, "GL24-2A01")
+            self._process_diluent(wb, "加稀释液-反应|||移液信息", int(procedure.get("diluent1")), True)
+            self._process_diluent(wb, "加稀释液-中转|||移液信息", int(procedure.get("diluent2")), True, "ZZ-B02")
+            self._process_diluent(wb, "加稀释液-过滤|||移液信息", int(procedure.get("diluent3")), False, "GL24-2A01")
 
             self._process_mixing(wb, procedure.get("diluent4"), procedure.get("diluent5"))
 
@@ -3444,9 +3444,9 @@ class ReactionProcessor:
             num += 1
             gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i,
-                                  ["FY24-B01", num, "ZZ-B02", num, int(diluent4)/2 , pipette_location, gun_head + 1])
+                                  ["FY24-B01", num, "ZZ-B02", num, int(diluent4) , pipette_location, gun_head + 1])
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i + 1,
-                                  ["ZZ-B02", num, "GL24-2A01", num, int(diluent5)/2, pipette_location, gun_head + 1])
+                                  ["ZZ-B02", num, "GL24-2A01", num, int(diluent5), pipette_location, gun_head + 1])
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)

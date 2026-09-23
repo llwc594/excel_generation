@@ -17,7 +17,11 @@
     "20260627": 4,
     "20260630": 2,
     "20260701": 2,
-    "20260710": 6
+    "20260710": 6,
+    "20260817": 0,
+    "20260828": 1,
+    "20260920": 2,
+    "20260922": 1
   },
   "materials": {
     "Sodium hydroxide": "20260506-001",
@@ -157,6 +161,10 @@
     "2,6-di-tert-butyl-pyridine!bis(2-phenylpyridinato)(2,2'-bipyridine)iridium(III) hexafluorophosphate": "20260710-003",
     "CHIRALPAK IA": "20260710-004",
     "ammonia": "20260710-005",
-    "N-Bromosuccinimide": "20260710-006"
+    "N-Bromosuccinimide": "20260710-006",
+    "OB(O)C1=CC=CC=C1": "20260828-001",
+    "OB(C1=CC=C(C)C=C1)O": "20260920-001",
+    "BrC2=CC=CC(C)=C2": "20260920-002",
+    "ClC1=NC=CC=N1": "20260922-001"
   }
 }

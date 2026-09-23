@@ -2104,13 +2104,8 @@ class ReactionProcessor:
         """
         environment = self.post_data['experimentLog2']['ReactionConditions']['environment']
         wb = openpyxl.load_workbook(file_path)
-        if environment =='2':
-            table_name='HopperStack'
-        else:
-            if len(excel_list) >=5:
-                table_name = 'HopperStack'
-            else:
-                table_name='TransferHopperStack'
+
+        table_name='HopperStack'
 
         if table_name not in wb.sheetnames:
             raise ValueError(f"工作簿中不存在 {table_name} 子表")
@@ -2546,30 +2541,30 @@ class ReactionProcessor:
 
         # ========== 第二部分：修改 D2, E2, F2 的值（原有逻辑不变） ==========
         if plate_type == "8孔":
-            ws["I2"] = "8孔"
-            ws["E4"] = "TA1-磁子分装_20ml-1"
-            ws["E5"] = "TA1-称量载具_20ml-1"
+            ws["E2"] = "8孔"
+            ws["B4"] = "TA1-磁子分装_20ml-1"
+            ws["B5"] = "TA1-称量载具_20ml-1"
         elif plate_type == "96孔":
-            ws["I2"] = "96孔"
-            ws["E4"] = "TA1-磁子分装_900ul-1"
-            ws["E5"] = "TA1-称量载具_900ul-1"
+            ws["E2"] = "96孔"
+            ws["B4"] = "TA1-磁子分装_900ul-1"
+            ws["B5"] = "TA1-称量载具_900ul-1"
         elif plate_type == "48孔":
-            ws["I2"] = "48孔"
-            ws["E4"] = "TA1-磁子分装_900ul-1"
-            ws["E5"] = "TA1-称量载具_900ul-1"
+            ws["E2"] = "48孔"
+            ws["B4"] = "TA1-磁子分装_900ul-1"
+            ws["B5"] = "TA1-称量载具_900ul-1"
         elif plate_type == '24孔':
             if condition["experimentLog1"]["wellPlates"] == "24孔板8ml":
-                ws["I2"] = "24孔板8ml"
-                ws["E4"] = "TA1-磁子分装_8ml-1"
-                ws["E5"] = "TA1-称量载具_8ml-1"
+                ws["E2"] = "24孔板8ml"
+                ws["B4"] = "TA1-磁子分装_8ml-1"
+                ws["B5"] = "TA1-称量载具_8ml-1"
             elif condition["experimentLog1"]["wellPlates"] == "24孔板4ml":
-                ws["I2"] = "24孔板4ml"
-                ws["E4"] = "TA1-磁子分装_4ml-1"
-                ws["E5"] = "TA1-称量载具_4ml-1"
+                ws["E2"] = "24孔板4ml"
+                ws["B4"] = "TA1-磁子分装_4ml-1"
+                ws["B5"] = "TA1-称量载具_4ml-1"
             elif condition["experimentLog1"]["wellPlates"] == "24孔板2ml":
-                ws["I2"] = "24孔板2ml"
-                ws["E4"] = "TA1-磁子分装_2ml-1"
-                ws["E5"] = "TA1-称量载具_2ml-1"
+                ws["E2"] = "24孔板2ml"
+                ws["B4"] = "TA1-磁子分装_2ml-1"
+                ws["B5"] = "TA1-称量载具_2ml-1"
         else:
             print(f"警告：未知的 plate_type '{plate_type}'，未修改 D2/E2/F2")
 
@@ -2607,9 +2602,9 @@ class ReactionProcessor:
     def modify_stack_table(self,transfer_records_12,transfer_records_24,transfer_records_2,BASE_PATH_1,BASE_PATH_2):
         fill_cells = []
         if len(transfer_records_12) > 0:
-            fill_cells.append('F5')
+            fill_cells.append('D2')
         len_24 = len(transfer_records_24)
-        CELLS_ROW4 = ["F4", "F3", "F2"]  # 按顺序，对应每12长度一个单元格
+        CELLS_ROW4 = ["D3", "D4", "D5"]  # 按顺序，对应每12长度一个单元格
 
         if len_24 > 0:
             n = (len_24 - 1) // 12 + 1  # 向上取整，得到需要填充的单元格数量（1~3）
@@ -2617,39 +2612,38 @@ class ReactionProcessor:
             fill_cells.extend(CELLS_ROW4[:n])
 
         len_2 = len(transfer_records_2)
-        CELLS_ROW4 = ["C5", "C4", "C3","C2"]  # 按顺序，对应每12长度一个单元格
+        CELLS_ROW4 = ["D6", "D7", "D8","D9"]  # 按顺序，对应每12长度一个单元格
 
         if len_2 > 0:
             n = (len_2 - 1) // 12 + 1  # 向上取整，得到需要填充的单元格数量（1~3）
             n = min(n, len(CELLS_ROW4))
             fill_cells.extend(CELLS_ROW4[:n])
-
+        #稀释
         product_dilution_data = self.post_data["experimentLog3"].get("productDilutionData", [])
         if product_dilution_data:
-            fill_cells.append("F3")
-            fill_cells.append("F2")
-
+            fill_cells.append("D4")
+            fill_cells.append("D5")
+        #淬灭剂，内标
         quenchingAgentData = self.post_data['experimentLog3']["quenchingAgentData"]
         internalStandardData = self.post_data['experimentLog3']["internalStandardData"]
         if quenchingAgentData and internalStandardData:
-            if 'C5' in fill_cells:
-                fill_cells.append("B5")
-            else:
-                fill_cells.append("C5")
-                
+            if 'D3'  not in fill_cells:
+                fill_cells.append("D3")
+        #萃取
         extractionData = self.post_data['experimentLog3']["extractionData"]
-        if extractionData and 'F5' not in fill_cells:
-            fill_cells.append("F5")
+        if extractionData and 'D2' not in fill_cells:
+            fill_cells.append("D2")
 
 
         if "A05" in self.gun_head_dict:
-            fill_cells.append("G2")
+            fill_cells.append("C4")
         if "B05" in self.gun_head_dict:
-            fill_cells.append("H2")
+            fill_cells.append("C5")
         if "A04" in self.gun_head_dict:
-            fill_cells.append("G3")
+            fill_cells.append("C2")
         if "B04" in self.gun_head_dict:
-            fill_cells.append("H3")
+            fill_cells.append("C3")
+
 
         self.process_plate_stack(
             file_path=fr"{BASE_PATH_1}/Materials-stack4列.xlsx",
@@ -2729,7 +2723,7 @@ class ReactionProcessor:
                         '''改成96孔板'''
                         num_12 += 1
                         transfer_records_24.append({
-                            "来源孔板条码": "A03-48",
+                            "来源孔板条码": "A03-96",
                             "来源孔板列Y": current_col-12,
                             "目标孔板条码": "B01-FY48",
                             "目标孔板列Y": hole_mapping[volume],
@@ -2754,7 +2748,7 @@ class ReactionProcessor:
             target_volume = amount * 1000  if amount else 0
             plate_id = plate_idx + num_12
             if self.type == 1:
-                bar_code = "A03-48"
+                bar_code = "A03-96"
                 record = {
                     "来源孔板条码": bar_code,
                     "来源孔板列Y": plate_id,
@@ -2765,23 +2759,23 @@ class ReactionProcessor:
                     "枪头列Y": gun_head + 1
                 }
                 if len(transfer_records_24) >= 24:
-                    record["来源孔板条码"] = "A02-48"
+                    record["来源孔板条码"] = "A02-96"
                     record['来源孔板列Y'] = plate_id-24
                     transfer_records_2.append(record)
                 elif len(transfer_records_24) >= 16:
-                    record["来源孔板条码"] = "B03-48"
+                    record["来源孔板条码"] = "B03-96"
                     record['来源孔板列Y'] = plate_id-16
                     transfer_records_24.append(record)
                 else:
                     if len(transfer_records_24) >= 8:
-                        record["来源孔板条码"] = "B02-48"
+                        record["来源孔板条码"] = "B02-96"
                         record["来源孔板列Y"] = plate_id - 8
                     transfer_records_24.append(record)
                 if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                     self.gun_head_dict[pipette_location].append(gun_head + 1)
             else:
                 record = {
-                    "来源孔板条码": "A03-48",
+                    "来源孔板条码": "A03-96",
                     "来源孔板列Y": plate_id + self.usage_24_hole,
                     "目标孔板条码": "B01-FY48",
                     "目标孔板列Y": hole_mapping[hole_id[0]],
@@ -2789,15 +2783,15 @@ class ReactionProcessor:
                     "枪头库位": pipette_location,
                     "枪头列Y": gun_head + 1}
                 if len(transfer_records_24) >= 24:
-                    record["来源孔板条码"] = "A02-48"
+                    record["来源孔板条码"] = "A02-96"
                     record["来源孔板列Y"] = plate_id - 24
                     transfer_records_2.append(record)
                 else:
                     if len(transfer_records_24) >= 8:
-                        record["来源孔板条码"] = "B02-48"
+                        record["来源孔板条码"] = "B02-96"
                         record["来源孔板列Y"] = plate_id - 8
                     if len(transfer_records_24) >= 16:
-                        record["来源孔板条码"] = "B03-48"
+                        record["来源孔板条码"] = "B03-96"
                         record["来源孔板列Y"] = plate_id - 16
                     transfer_records_24.append(record)
                 if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -3045,17 +3039,17 @@ class ReactionProcessor:
         # 反应时间
         if times := exp_log2["ReactionConditions"].get("time"):
             time = int(times)
-            if temp:
-                if int(temp)>=26:
-                    pass
-                elif int(temp)<=60:
-                    time+=3
-                elif int(temp)<=100:
-                    time+=6
-                elif int(temp)<=160:
-                    time+=10
-                elif int(temp)<=200:
-                    time+=18
+            # if temp:
+            #     if int(temp)>=26:
+            #         pass
+            #     elif int(temp)<=60:
+            #         time+=3
+            #     elif int(temp)<=100:
+            #         time+=6
+            #     elif int(temp)<=160:
+            #         time+=10
+            #     elif int(temp)<=200:
+            #         time+=18
             ExcelUtils.modify_cell(wb, "任务参数配置", "J3", int(time))
 
         # 密封
@@ -3315,7 +3309,7 @@ class ReactionProcessor:
             procedure = data.get("procedure", {})
 
             self._process_diluent(wb, "加稀释液-反应|||移液信息", procedure.get("diluent1"), True)
-            self._process_diluent(wb, "加稀释液-中转|||移液信息", procedure.get("diluent2"), True, "B02-48")
+            self._process_diluent(wb, "加稀释液-中转|||移液信息", procedure.get("diluent2"), True, "B02-96")
             self._process_diluent(wb, "加稀释液-过滤|||移液信息", procedure.get("diluent3"), False, "2A01-GL48")
             #反应板混匀
             self._process_mixing(wb, procedure.get("diluent4"), procedure.get("diluent5"))
@@ -3355,9 +3349,9 @@ class ReactionProcessor:
             num += 1
             gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i,
-                                  ["B01-FY48", num, "B02-48", num, int(diluent4) , pipette_location, gun_head + 1])
+                                  ["B01-FY48", num, "B02-96", num, int(diluent4) , pipette_location, gun_head + 1])
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i + 1,
-                                  ["B02-48", num, "2A01-GL48", num, int(diluent5), pipette_location, gun_head + 1])
+                                  ["B02-96", num, "2A01-GL48", num, int(diluent5), pipette_location, gun_head + 1])
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)

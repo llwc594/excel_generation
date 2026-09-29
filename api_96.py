@@ -1471,28 +1471,28 @@ class ReactionProcessor:
 
         # ========== 第二部分：修改 D2, E2, F2 的值（原有逻辑不变） ==========
         if plate_type == "8孔":
-            ws["E2"] = "8孔"
+            ws["E2"] = "8-20ml（AUT）"
             ws["B4"] = "TA1-磁子分装_20ml-1"
             ws["B5"] = "TA1-称量载具_20ml-1"
         elif plate_type == "96孔":
-            ws["E2"] = "96孔"
+            ws["E2"] = "96-1ml（AUT）"
             ws["B4"] = "TA1-磁子分装_900ul-1"
             ws["B5"] = "TA1-称量载具_900ul-1"
         elif plate_type == "48孔":
-            ws["E2"] = "48孔"
+            ws["E2"] = "96-1ml（AUT）"
             ws["B4"] = "TA1-磁子分装_900ul-1"
             ws["B5"] = "TA1-称量载具_900ul-1"
         elif plate_type == '24孔':
             if condition["experimentLog1"]["wellPlates"] == "24孔板8ml":
-                ws["E2"] = "24孔板8ml"
+                ws["E2"] = "24-8ml（AUT）"
                 ws["B4"] = "TA1-磁子分装_8ml-1"
                 ws["B5"] = "TA1-称量载具_8ml-1"
             elif condition["experimentLog1"]["wellPlates"] == "24孔板4ml":
-                ws["E2"] = "24孔板4ml"
+                ws["E2"] = "24-4ml（AUT）"
                 ws["B4"] = "TA1-磁子分装_4ml-1"
                 ws["B5"] = "TA1-称量载具_4ml-1"
             elif condition["experimentLog1"]["wellPlates"] == "24孔板2ml":
-                ws["E2"] = "24孔板2ml"
+                ws["E2"] = "24-2ml（AUT）"
                 ws["B4"] = "TA1-磁子分装_2ml-1"
                 ws["B5"] = "TA1-称量载具_2ml-1"
         else:

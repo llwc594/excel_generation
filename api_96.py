@@ -1471,28 +1471,28 @@ class ReactionProcessor:
 
         # ========== 第二部分：修改 D2, E2, F2 的值（原有逻辑不变） ==========
         if plate_type == "8孔":
-            ws["E2"] = "8-20ml（AUT）"
+            ws["E2"] = "8孔"
             ws["B4"] = "TA1-磁子分装_20ml-1"
             ws["B5"] = "TA1-称量载具_20ml-1"
         elif plate_type == "96孔":
-            ws["E2"] = "96-1ml（AUT）"
+            ws["E2"] = "96孔"
             ws["B4"] = "TA1-磁子分装_900ul-1"
             ws["B5"] = "TA1-称量载具_900ul-1"
         elif plate_type == "48孔":
-            ws["E2"] = "96-1ml（AUT）"
+            ws["E2"] = "48孔"
             ws["B4"] = "TA1-磁子分装_900ul-1"
             ws["B5"] = "TA1-称量载具_900ul-1"
         elif plate_type == '24孔':
             if condition["experimentLog1"]["wellPlates"] == "24孔板8ml":
-                ws["E2"] = "24-8ml（AUT）"
+                ws["E2"] = "24孔板8ml"
                 ws["B4"] = "TA1-磁子分装_8ml-1"
                 ws["B5"] = "TA1-称量载具_8ml-1"
             elif condition["experimentLog1"]["wellPlates"] == "24孔板4ml":
-                ws["E2"] = "24-4ml（AUT）"
+                ws["E2"] = "24孔板4ml"
                 ws["B4"] = "TA1-磁子分装_4ml-1"
                 ws["B5"] = "TA1-称量载具_4ml-1"
             elif condition["experimentLog1"]["wellPlates"] == "24孔板2ml":
-                ws["E2"] = "24-2ml（AUT）"
+                ws["E2"] = "24孔板2ml"
                 ws["B4"] = "TA1-磁子分装_2ml-1"
                 ws["B5"] = "TA1-称量载具_2ml-1"
         else:
@@ -3310,7 +3310,7 @@ class ReactionProcessor:
             df['PlaterName'] = None
             # 仅第一行（索引0）写入 '96孔'
             if len(df) > 0:
-                df.at[0, 'PlaterName'] = '96孔'
+                df.at[0, 'PlaterName'] = '96-1ml(AUT)'
             if self.type == 1:
                 # 根据表号生成文件名
                 if table_num == 1:
@@ -3331,7 +3331,7 @@ class ReactionProcessor:
             df['PlaterName'] = None
             # 仅第一行（索引0）写入 '96孔'
             if len(df) > 0:
-                df.at[0, 'PlaterName'] = '96孔'
+                df.at[0, 'PlaterName'] = '96-1ml(AUT)'
             df.to_excel(TEMPLATE_PATHS["mate"], index=False)
         elif create_True == 2 and self.type == 2:
             df = pd.DataFrame(columns=[
@@ -3341,7 +3341,7 @@ class ReactionProcessor:
             df['PlaterName'] = None
             # 仅第一行（索引0）写入 '96孔'
             if len(df) > 0:
-                df.at[0, 'PlaterName'] = '96孔'
+                df.at[0, 'PlaterName'] = '96-1ml(AUT)'
             df.to_excel(crystallize_TEMPLATE_PATHS["mate"], index=False)
 
 

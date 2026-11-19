@@ -15,13 +15,11 @@ import os
 import shutil
 from pathlib import Path
 from typing import Any, List, Dict, Union
-import openpyxl
-from openpyxl.reader.excel import load_workbook
-from openpyxl.workbook import Workbook
+from wolfxl import load_workbook, Workbook
 from typing import Dict, List, Any, Union, Tuple, Optional
 import xlwings as xw
-from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
-import aspose.cells as ac
+from wolfxl.styles import Alignment, Font, Border, Side, PatternFill
+# import aspose.cells as ac
 # 常量定义
 # BASE_PATH = r"D:/api/python/表格生成/逆合成"
 # BASE_PATH1 = r"D:/api/python/模板/逆合成"
@@ -69,7 +67,7 @@ class ExcelUtils:
     @staticmethod
     def open_workbook(file_path: str) -> Workbook:
         """打开Excel文件"""
-        return openpyxl.load_workbook(file_path)
+        return load_workbook(file_path)
 
     @staticmethod
     def save_workbook(workbook: Workbook, save_path: str) -> None:
@@ -99,7 +97,7 @@ class ExcelUtils:
     @staticmethod
     def copy_workbook(source_path: str, target_path: str) -> None:
         """复制Excel文件"""
-        wb = openpyxl.load_workbook(source_path)
+        wb = load_workbook(source_path)
         ExcelUtils.save_workbook(wb, target_path)
         print(f"文件已成功复制到: {target_path}")
 
@@ -158,14 +156,19 @@ class ExcelUtils:
                 sheet.cell(row=row_num, column=i).value = value
 
     @staticmethod
-    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict]) -> None:
+    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict], start_row: int = None) -> None:
         """将记录写入工作表"""
         sheet = workbook[sheet_name]
-
-        # 写入数据
-        for record in records:
-            row = list(record.values())
-            sheet.append(row)
+        
+        # 如果不传 start_row，则默认找当前最大行 + 1
+        if start_row is None:
+            start_row = sheet.max_row + 1
+            
+        for i, record in enumerate(records):
+            row_vals = list(record.values())
+            # 显式遍历每一列，用 cell(row, col, value) 写入，避开 wolfxl 的 append 缓冲池问题
+            for j, val in enumerate(row_vals):
+                sheet.cell(row=start_row + i, column=j + 1, value=val)
 
     @staticmethod
     def clear_directory(folder_path: str) -> None:
@@ -1198,7 +1201,7 @@ class ReactionProcessor:
 
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data,start_row_idx)
 
         # 合并所有批次的单元格并设置居中
 
@@ -1288,7 +1291,7 @@ class ReactionProcessor:
 
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data,start_row_idx)
 
         # 合并所有批次的单元格并设置居中
 
@@ -2512,7 +2515,7 @@ class ReactionProcessor:
         1. 根据传入的 fill_cells 列表批量标黄单元格。
         2. 根据 plate_type / condition 修改 D2, E2, F2 的值（逻辑保持不变）。
         """
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path)
         if "PlateStack" not in wb.sheetnames:
             raise ValueError("工作簿中不存在 'PlateStack' 子表")
         ws = wb["PlateStack"]
@@ -2611,6 +2614,14 @@ class ReactionProcessor:
         if product_dilution_data:
             fill_cells.append("D4")
             fill_cells.append("D5")
+
+        quenchingAgentData = self.post_data['experimentLog3']["quenchingAgentData"]
+        internalStandardData = self.post_data['experimentLog3']["internalStandardData"]
+        if quenchingAgentData or internalStandardData:
+            if 'D3' in fill_cells:
+                fill_cells.append("D3")
+            else:
+                fill_cells.append("D3")
 
         if "A05" in self.gun_head_dict:
             fill_cells.append("C4")
@@ -3022,7 +3033,7 @@ class ReactionProcessor:
                            其中 Locate 为 1~24 的整数，对应 B2:G5 的行优先顺序
         """
         environment = self.post_data['experimentLog2']['ReactionConditions']['environment']
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path)
 
         table_name='HopperStack'
 
@@ -3439,11 +3450,11 @@ class ReactionProcessor:
             wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf11"])
             procedure = data.get("procedure", {})
 
-            self._process_diluent(wb, "加稀释液-反应|||移液信息", int(procedure.get("diluent1")), True)
-            self._process_diluent(wb, "加稀释液-中转|||移液信息", int(procedure.get("diluent2")), True, "ZZ-B02")
-            self._process_diluent(wb, "加稀释液-过滤|||移液信息", int(procedure.get("diluent3")), False, "GL24-2A01")
+            self._process_diluent(wb, "加稀释液-反应|||移液信息", int(float(procedure.get("diluent1"))), True)
+            self._process_diluent(wb, "加稀释液-中转|||移液信息", int(float(procedure.get("diluent2"))), True, "ZZ-B02")
+            self._process_diluent(wb, "加稀释液-过滤|||移液信息", int(float(procedure.get("diluent3"))), False, "GL24-2A01")
 
-            self._process_mixing(wb, procedure.get("diluent4"), procedure.get("diluent5"))
+            self._process_mixing(wb, int(float(procedure.get("diluent4"))), int(float(procedure.get("diluent5"))))
 
             ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["wf11"])
 
@@ -3534,378 +3545,1714 @@ def main(id,post_data: dict,source) -> None:
     processor = ReactionProcessor(id,post_data)
     processor.process(source)
 
-    if source ==1:
-        ExcelUtils.batch_repair_folder(BASE_PATH)
-    else:
-        ExcelUtils.batch_repair_folder(crystallize_BASE_PATH)
+    # if source ==1:
+    #     ExcelUtils.batch_repair_folder(BASE_PATH)
+    # else:
+    #     ExcelUtils.batch_repair_folder(crystallize_BASE_PATH)
 
 
 if __name__ == "__main__":
     #逆合成
-    data10 = {
-    "id": "4451de9f567c43b3a9fd659374e8159c",
-    "condition": {
-        "experimentLog1": {
-            "wellPlates": "24孔板4ml",
-            "SubstratesTableList": [
-                {
-                    "rowId": "row_1778379162672_7",
-                    "id": 1,
-                    "type": "sub",
-                    "smiles": "NCc1ccccc1",
-                    "substance": "NaCl",
-                    "molecularFormula": "C7H9N",
-                    "limitReagents": True,
-                    "equivalent": 1,
-                    "solvent": "10",
-                    "reactionMoles": "1.00",
-                    "reactionQuality": "10.00",
-                    "reactionVolume": 3.2,
-                    "liquidReagentConcentration": "固态",
-                    "reactionMoleConcentration": "",
-                    "singleCockAddVolume": "",
-                    "cas": ""
-                },
-                {
-                    "rowId": "row_1778379162672_8",
-                    "id": 1,
-                    "type": "sub",
-                    "smiles": "Fc1ccccn1",
-                    "substance": "NaCl",
-                    "molecularFormula": "C5H4FN",
-                    "limitReagents": False,
-                    "equivalent": 1,
-                    "solvent": "10",
-                    "reactionMoles": "1.00",
-                    "reactionQuality": "10.00",
-                    "reactionVolume": 3.2,
-                    "liquidReagentConcentration": "固态",
-                    "reactionMoleConcentration": "",
-                    "singleCockAddVolume": "",
-                    "cas": ""
-                },
-                {
-                    "rowId": "row_1778379162672_9",
-                    "id": 1,
-                    "type": "reagent",
-                    "smiles": "",
-                    "substance": "NaCl",
-                    "molecularFormula": "",
-                    "equivalent": "1",
-                    "solvent": "10",
-                    "reactionMoles": "1.00",
-                    "reactionQuality": "10.00",
-                    "reactionVolume": 3.2,
-                    "liquidReagentConcentration": "固态",
-                    "reactionMoleConcentration": "",
-                    "singleCockAddVolume": "",
-                    "cas": ""
-                },
-                {
-                    "rowId": "row_1778379162672_10",
-                    "id": 1,
-                    "type": "reagent",
-                    "smiles": "",
-                    "substance": "试剂2,Josiphos SL-J009-1",
-                    "molecularFormula": "",
-                    "equivalent": "1",
-                    "solvent": "10",
-                    "reactionMoles": "1.00",
-                    "reactionQuality": "10.00",
-                    "reactionVolume": 3.2,
-                    "liquidReagentConcentration": "液体",
-                    "reactionMoleConcentration": "1.00",
-                    "singleCockAddVolume": "1",
-                    "cas": ""
-                },
-                {
-                    "rowId": "row_1778379162672_11",
-                    "id": 1,
-                    "type": "reagent",
-                    "smiles": "",
-                    "substance": "试剂3,NaOtBu",
-                    "molecularFormula": "",
-                    "equivalent": "1",
-                    "solvent": "10",
-                    "reactionMoles": "1.00",
-                    "reactionQuality": "10.00",
-                    "reactionVolume": 3.2,
-                    "liquidReagentConcentration": "液体",
-                    "reactionMoleConcentration": "1.00",
-                    "singleCockAddVolume": "1",
-                    "cas": ""
-                },
-                {
-                    "rowId": "row_1778379162672_12",
-                    "id": 1,
-                    "type": "solvent",
-                    "smiles": "",
-                    "substance": "溶剂1,GDME",
-                    "molecularFormula": "",
-                    "solvent": "",
-                    "reactionVolume": 3.2,
-                    "liquidReagentConcentration": "液体",
-                    "singleCockAddVolume": "0.20",
-                    "cas": ""
-                }
-            ],
-            "MaterialsTableList": [
-                {
-                    "type": "sub",
-                    "substance": "NaCl",
-                    "smiles": "NCc1ccccc1",
-                    "solvent": "10",
-                    "molecularFormula": "C7H9N",
-                    "theoreticalMoles": "3.00",
-                    "theoreticalQuality": "30.00",
-                    "theoreticalVolume": "0.00",
-                    "configurationMoles": "3.90",
-                    "cas": "",
-                    "id": 1,
-                    "configurationVolume": "0.00",
-                    "configurationQuality": "39.00",
-                    "concentration": ""
-                },
-                {
-                    "type": "reagent",
-                    "substance": "试剂2,Josiphos SL-J009-1",
-                    "smiles": "",
-                    "solvent": "10",
-                    "molecularFormula": "",
-                    "theoreticalMoles": "1.00",
-                    "theoreticalQuality": "10.00",
-                    "theoreticalVolume": "1.00",
-                    "configurationMoles": "1.30",
-                    "cas": "",
-                    "id": 2,
-                    "configurationVolume": "5.00",
-                    "configurationQuality": "13.00",
-                    "concentration": "1.00"
-                },
-                {
-                    "type": "reagent",
-                    "substance": "试剂3,NaOtBu",
-                    "smiles": "",
-                    "solvent": "10",
-                    "molecularFormula": "",
-                    "theoreticalMoles": "1.00",
-                    "theoreticalQuality": "10.00",
-                    "theoreticalVolume": "1.00",
-                    "configurationMoles": "1.30",
-                    "cas": "",
-                    "id": 3,
-                    "configurationVolume": "5.00",
-                    "configurationQuality": "13.00",
-                    "concentration": "1.00"
-                },
-                {
-                    "type": "solvent",
-                    "substance": "溶剂1,GDME",
-                    "smiles": "",
-                    "solvent": "",
-                    "molecularFormula": "",
-                    "theoreticalMoles": "",
-                    "theoreticalQuality": "",
-                    "theoreticalVolume": "1.20",
-                    "configurationMoles": "",
-                    "cas": "",
-                    "id": 4,
-                    "configurationVolume": "5.00",
-                    "configurationQuality": "",
-                    "concentration": ""
-                }
-            ],
-            "SynthesisMolReadList": [],
-            "reactionParams": []
+    data10 = {"id": "9db9551272cd4af7816912e4df45050c", "condition": {"experimentLog1": {"wellPlates": "24孔板2ml", "SubstratesTableList": [{"rowId": "row_1791791976673_1", "id": 1, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791791976673_2", "id": 1, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791791976673_3", "id": 1, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791791976673_5", "id": 1, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792132955_6", "id": 2, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792132955_7", "id": 2, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792132955_8", "id": 2, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792132955_9", "id": 2, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792134011_10", "id": 3, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792134011_11", "id": 3, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792134011_12", "id": 3, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792134011_13", "id": 3, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792138874_14", "id": 4, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792138874_15", "id": 4, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792138875_16", "id": 4, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792138875_17", "id": 4, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792139571_18", "id": 5, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792139571_19", "id": 5, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792139571_20", "id": 5, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792139571_21", "id": 5, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792140139_22", "id": 6, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792140139_23", "id": 6, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792140139_24", "id": 6, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792140139_25", "id": 6, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792140810_26", "id": 7, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792140810_27", "id": 7, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792140810_28", "id": 7, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792140810_29", "id": 7, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792141523_30", "id": 8, "type": "sub", "smiles": "ClC1=NC=CC=N1", "substance": "ClC1=NC=CC=N1", "molecularFormula": "C4H3ClN2", "limitReagents": True, "equivalent": "1.00", "solvent": 114.53, "reactionMoles": "0.05", "reactionQuality": "5.73", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792141523_31", "id": 8, "type": "sub", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "substance": "N2(CCNCC2)C3=CC=CC=C3", "molecularFormula": "C10H14N2", "limitReagents": False, "equivalent": "1.2", "solvent": 162.24, "reactionMoles": "0.06", "reactionQuality": "9.73", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "reactionMoleConcentration": "0.24", "singleCockAddVolume": "0.25", "cas": ""}, {"rowId": "row_1791792141523_32", "id": 8, "type": "reagent", "smiles": "", "substance": "K2CO3", "molecularFormula": "", "equivalent": "1.5", "solvent": "138.20", "reactionMoles": "0.08", "reactionQuality": "11.06", "reactionVolume": 1.6, "liquidReagentConcentration": "固态", "reactionMoleConcentration": "", "singleCockAddVolume": "", "cas": ""}, {"rowId": "row_1791792141523_33", "id": 8, "type": "solvent", "smiles": "", "substance": "DMF", "molecularFormula": "", "solvent": "", "reactionVolume": 1.6, "liquidReagentConcentration": "液体", "singleCockAddVolume": "0.25", "cas": ""}], "MaterialsTableList": [{"type": "sub", "substance": "ClC1=NC=CC=N1", "smiles": "ClC1=NC=CC=N1", "solvent": 114.53, "molecularFormula": "C4H3ClN2", "theoreticalMoles": "0.40", "theoreticalQuality": "45.84", "theoreticalVolume": "0.00", "configurationMoles": "0.53", "cas": "", "id": 1, "configurationVolume": "0.00", "configurationQuality": "59.59", "concentration": ""}, {"type": "sub", "substance": "N2(CCNCC2)C3=CC=CC=C3", "smiles": "N2(CCNCC2)C3=CC=CC=C3", "solvent": 162.24, "molecularFormula": "C10H14N2", "theoreticalMoles": "0.48", "theoreticalQuality": "77.84", "theoreticalVolume": "2.00", "configurationMoles": "0.64", "cas": "", "id": 2, "configurationVolume": "5.00", "configurationQuality": "101.19", "concentration": "0.24"}, {"type": "reagent", "substance": "K2CO3", "smiles": "", "solvent": "138.20", "molecularFormula": "", "theoreticalMoles": "0.64", "theoreticalQuality": "88.48", "theoreticalVolume": "0.00", "configurationMoles": "0.80", "cas": "", "id": 3, "configurationVolume": "0.00", "configurationQuality": "115.02", "concentration": ""}, {"type": "solvent", "substance": "DMF", "smiles": "", "solvent": "", "molecularFormula": "", "theoreticalMoles": "", "theoreticalQuality": "", "theoreticalVolume": "2.00", "configurationMoles": "", "cas": "", "id": 4, "configurationVolume": "5.00", "configurationQuality": "", "concentration": ""}], "SynthesisMolReadList": [], "reactionParams": []}, "experimentLog2": {"ReactionConditions": {"temperature": "100", "time": "30", "speed": "900", "seal": "1", "environment": "1"}, "lightData": {"type": "1", "typeList": [{"label": "照射方式1", "value": "1"}, {"label": "照射方式2", "value": "2"}], "list": [{"status": "1", "WattageStart": "", "WattageType": "", "time": [{"start": "", "end": ""}]}, {"status": "1", "WattageStart": "", "WattageType": "", "time": [{"start": "", "end": ""}]}, {"status": "1", "WattageStart": "", "WattageType": "", "time": [{"start": "", "end": ""}]}, {"status": "1", "WattageStart": "", "WattageType": "", "time": [{"start": "", "end": ""}]}]}, "electricityData": {"type": "1", "list": []}, "gasData": {}}, "experimentLog3": {"coolingTime": "30", "quenchingAgentData": [], "internalStandardData": [{"name": "IS1", "moles": "0.025", "molecularWeight": "197.23", "addVolume": "300", "internalConcentration": "0.042", "internalVolume": "25", "internalQuality": "205.4"}], "productDilutionData": [{"name": "MeCN", "beforeConcentration": "0.1", "afterConcentration": "0.000087", "procedure": {"diluent1": "190", "diluent2": "1800", "diluent3": "190", "diluent4": "10", "diluent5": "10"}}], "extractionData": [{"name": "", "volume": "", "time": "", "times": "", "type": "1"}], "filtrationData": [{"name": "0.22微米", "filterTime": "1"}]}, "experimentLog4": {"instrumentName": "", "instrumentInstruments": [], "NMR": {"analyseArr": [{"name": "H NMR", "status": False}, {"name": "C NMR", "status": False}, {"name": "F NMR", "status": False}, {"name": "P NMR", "status": False}, {"name": "COSY", "status": False}, {"name": "HSQC", "status": False}, {"name": "HMBC", "status": False}, {"name": "NOESY", "status": False}], "solvent": {"name": "", "volume": "", "temperature": "", "frequency": ""}}, "MS": [], "LC": [], "LCMS": [], "GC": [], "UV": [{"wavelengthStart": "", "wavelengthEnd": "", "velocity": "", "width": "", "solvent": "", "concentration": ""}], "IR": [{"resolutionStart": "", "resolutionEnd": "", "scanNumber": "", "Wavenumber": ""}], "XRD": [{"startAngle": "", "endAngle": "", "stepLength": "", "scanSpeed": "", "scanDuration": "", "mode": ""}]}}}
+    data = {
+    "experimentLog1": {
+        "wellPlates": "24孔板8ml",
+        "SubstratesTableList": [
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "copper(l) iodide",
+                "substance": "试剂1,copper(l) iodide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_1",
+                "intensity": None,
+                "reactionQuality": "83.80",
+                "cas": "",
+                "molecularFormula": "CuI",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "190.45",
+                "reactionMoles": "0.44",
+                "id": 5
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "2.00",
+                "smiles": "potassium carbonate",
+                "substance": "试剂2,potassium carbonate",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_2",
+                "intensity": None,
+                "reactionQuality": "1213.50",
+                "cas": "",
+                "molecularFormula": "K2CO3",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "138.21",
+                "reactionMoles": "8.78",
+                "id": 5
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.20",
+                "smiles": "Pipecolic Acid",
+                "substance": "试剂3,Pipecolic Acid",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_3",
+                "intensity": None,
+                "reactionQuality": "113.70",
+                "cas": "",
+                "molecularFormula": "C6H11NO2",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "129.16",
+                "reactionMoles": "0.88",
+                "id": 5
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "N,N-dimethyl-formamide",
+                "substance": "溶剂1,N,N-dimethyl-formamide",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_4",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "C3H7NO",
+                "singleCockAddVolume": "5.43",
+                "reactionMoleConcentration": "",
+                "solvent": "73.09",
+                "reactionMoles": None,
+                "id": 5
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_5",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H5N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "91.11",
+                "reactionMoles": "4.39",
+                "id": 5
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_6",
+                "intensity": None,
+                "reactionQuality": "827.40",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.56",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.27",
+                "id": 5
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.05",
+                "smiles": "2,3-diphenylcyclopropyldicyclohexylphosphine borane",
+                "substance": "试剂1,2,3-diphenylcyclopropyldicyclohexylphosphine borane",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_7",
+                "intensity": None,
+                "reactionQuality": "105.70",
+                "cas": "",
+                "molecularFormula": "C33H42BP",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "480.48",
+                "reactionMoles": "0.22",
+                "id": 6
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.05",
+                "smiles": "C39H52BrO2PPdSi",
+                "substance": "试剂2,C39H52BrO2PPdSi",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_8",
+                "intensity": None,
+                "reactionQuality": "178.90",
+                "cas": "",
+                "molecularFormula": "C39H52BrO2PPdSi",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "813.22",
+                "reactionMoles": "0.22",
+                "id": 6
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.50",
+                "smiles": "sodium t-butanolate",
+                "substance": "试剂3,sodium t-butanolate",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_9",
+                "intensity": None,
+                "reactionQuality": "633.30",
+                "cas": "",
+                "molecularFormula": "C4H9NaO",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "96.10",
+                "reactionMoles": "6.59",
+                "id": 6
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "o-xylene",
+                "substance": "溶剂1,o-xylene",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_10",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "C8H10",
+                "singleCockAddVolume": "5.43",
+                "reactionMoleConcentration": "",
+                "solvent": "106.17",
+                "reactionMoles": None,
+                "id": 6
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_11",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H5N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "91.11",
+                "reactionMoles": "4.39",
+                "id": 6
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_12",
+                "intensity": None,
+                "reactionQuality": "827.40",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.56",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.27",
+                "id": 6
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.50",
+                "smiles": "1,4-diaza-bicyclo[2.2.2]octane",
+                "substance": "试剂1,1,4-diaza-bicyclo[2.2.2]octane",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_13",
+                "intensity": None,
+                "reactionQuality": "739.30",
+                "cas": "",
+                "molecularFormula": "C6H12N2",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "112.18",
+                "reactionMoles": "6.59",
+                "id": 7
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.02",
+                "smiles": "tris(2,2-bipyridine)ruthenium(II) hexafluorophosphate",
+                "substance": "试剂2,tris(2,2-bipyridine)ruthenium(II) hexafluorophosphate",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_14",
+                "intensity": None,
+                "reactionQuality": "77.40",
+                "cas": "",
+                "molecularFormula": "C30H24F12N6P2Ru",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "859.55",
+                "reactionMoles": "0.09",
+                "id": 7
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "nickel(II) bromide trihydrate",
+                "substance": "试剂3,nickel(II) bromide trihydrate",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_15",
+                "intensity": None,
+                "reactionQuality": "119.90",
+                "cas": "",
+                "molecularFormula": "Br2H6NiO3",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "272.55",
+                "reactionMoles": "0.44",
+                "id": 7
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.50",
+                "smiles": "hexan-1-amine",
+                "substance": "试剂4,hexan-1-amine",
+                "type": "reagent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_16",
+                "intensity": None,
+                "reactionQuality": "666.80",
+                "cas": "",
+                "molecularFormula": "C6H15N",
+                "singleCockAddVolume": "0.85",
+                "reactionMoleConcentration": "",
+                "solvent": "101.19",
+                "reactionMoles": "6.59",
+                "id": 7
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "dimethyl sulfoxide",
+                "substance": "溶剂1,dimethyl sulfoxide",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_17",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "C2H6OS",
+                "singleCockAddVolume": "4.58",
+                "reactionMoleConcentration": "",
+                "solvent": "78.13",
+                "reactionMoles": None,
+                "id": 7
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_18",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H5N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "91.11",
+                "reactionMoles": "4.39",
+                "id": 7
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_19",
+                "intensity": None,
+                "reactionQuality": "827.40",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.56",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.27",
+                "id": 7
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "oxalic acid hydrazide",
+                "substance": "试剂1,oxalic acid hydrazide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_20",
+                "intensity": None,
+                "reactionQuality": "474.70",
+                "cas": "",
+                "molecularFormula": "C2H6N2O2",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "90.08",
+                "reactionMoles": "5.27",
+                "id": 8
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "2.00",
+                "smiles": "potassium hydroxide",
+                "substance": "试剂2,potassium hydroxide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_21",
+                "intensity": None,
+                "reactionQuality": "492.60",
+                "cas": "",
+                "molecularFormula": "KOH",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "56.11",
+                "reactionMoles": "8.78",
+                "id": 8
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "tetrabutylammomium bromide",
+                "substance": "试剂3,tetrabutylammomium bromide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_22",
+                "intensity": None,
+                "reactionQuality": "141.80",
+                "cas": "",
+                "molecularFormula": "C16H36BrN",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "322.37",
+                "reactionMoles": "0.44",
+                "id": 8
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "2,5-hexadione",
+                "substance": "试剂4,2,5-hexadione",
+                "type": "reagent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_23",
+                "intensity": None,
+                "reactionQuality": "601.50",
+                "cas": "",
+                "molecularFormula": "C6H10O2",
+                "singleCockAddVolume": "0.62",
+                "reactionMoleConcentration": "",
+                "solvent": "114.14",
+                "reactionMoles": "5.27",
+                "id": 8
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "copper(II) oxide",
+                "substance": "试剂5,copper(II) oxide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_24",
+                "intensity": None,
+                "reactionQuality": "35.00",
+                "cas": "",
+                "molecularFormula": "CuO",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "79.55",
+                "reactionMoles": "0.44",
+                "id": 8
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "water",
+                "substance": "溶剂1,water",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_25",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "H2O",
+                "singleCockAddVolume": "4.81",
+                "reactionMoleConcentration": "",
+                "solvent": "18.02",
+                "reactionMoles": None,
+                "id": 8
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_26",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H5N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "91.11",
+                "reactionMoles": "4.39",
+                "id": 8
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_27",
+                "intensity": None,
+                "reactionQuality": "827.40",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.56",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.27",
+                "id": 8
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "copper diacetate",
+                "substance": "试剂1,copper diacetate",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_28",
+                "intensity": None,
+                "reactionQuality": "78.00",
+                "cas": "",
+                "molecularFormula": "C4H6CuO4",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "181.63",
+                "reactionMoles": "0.43",
+                "id": 1
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "3-(2-(2-methoxyphenyl)-2-oxoethyl)-1-(pyridin-2-yl)-1H-imidazo-3-ium bromide",
+                "substance": "试剂2,3-(2-(2-methoxyphenyl)-2-oxoethyl)-1-(pyridin-2-yl)-1H-imidazo-3-ium bromide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_29",
+                "intensity": None,
+                "reactionQuality": "160.70",
+                "cas": "",
+                "molecularFormula": "C17H16BrN3O2",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "374.23",
+                "reactionMoles": "0.43",
+                "id": 1
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "neat (no solvent)",
+                "substance": "溶剂1,neat (no solvent)",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_30",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "None",
+                "singleCockAddVolume": "5.45",
+                "reactionMoleConcentration": "",
+                "solvent": "0.00",
+                "reactionMoles": None,
+                "id": 1
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_31",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H7N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "93.13",
+                "reactionMoles": "4.30",
+                "id": 1
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_32",
+                "intensity": None,
+                "reactionQuality": "809.20",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.54",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.15",
+                "id": 1
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "2.00",
+                "smiles": "potassium ethoxide",
+                "substance": "试剂1,potassium ethoxide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_33",
+                "intensity": None,
+                "reactionQuality": "723.00",
+                "cas": "",
+                "molecularFormula": "C2H5KO",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "84.16",
+                "reactionMoles": "8.59",
+                "id": 2
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "1,4-dioxane",
+                "substance": "溶剂1,1,4-dioxane",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_34",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "C4H8O2",
+                "singleCockAddVolume": "5.45",
+                "reactionMoleConcentration": "",
+                "solvent": "88.11",
+                "reactionMoles": None,
+                "id": 2
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_35",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H7N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "93.13",
+                "reactionMoles": "4.30",
+                "id": 2
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_36",
+                "intensity": None,
+                "reactionQuality": "809.20",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.54",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.15",
+                "id": 2
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.05",
+                "smiles": "bis-triphenylphosphine-palladium(II) chloride",
+                "substance": "试剂1,bis-triphenylphosphine-palladium(II) chloride",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_37",
+                "intensity": None,
+                "reactionQuality": "150.80",
+                "cas": "",
+                "molecularFormula": "C36H30Cl2P2Pd",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "701.90",
+                "reactionMoles": "0.21",
+                "id": 3
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "12-cyclopentyl-6-phenyl-5,6,7,12-tetrahydrodibenzo[c,f][1,5]azastibocine",
+                "substance": "试剂2,12-cyclopentyl-6-phenyl-5,6,7,12-tetrahydrodibenzo[c,f][1,5]azastibocine",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_38",
+                "intensity": None,
+                "reactionQuality": "233.80",
+                "cas": "",
+                "molecularFormula": "C29H28NSb",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "544.30",
+                "reactionMoles": "0.43",
+                "id": 3
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "2.00",
+                "smiles": "sodium t-butanolate",
+                "substance": "试剂3,sodium t-butanolate",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_39",
+                "intensity": None,
+                "reactionQuality": "825.50",
+                "cas": "",
+                "molecularFormula": "C4H9NaO",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "96.10",
+                "reactionMoles": "8.59",
+                "id": 3
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "toluene",
+                "substance": "溶剂1,toluene",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_40",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "C7H8",
+                "singleCockAddVolume": "5.45",
+                "reactionMoleConcentration": "",
+                "solvent": "92.14",
+                "reactionMoles": None,
+                "id": 3
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_41",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H7N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "93.13",
+                "reactionMoles": "4.30",
+                "id": 3
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_42",
+                "intensity": None,
+                "reactionQuality": "809.20",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.54",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.15",
+                "id": 3
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "iron(III) chloride",
+                "substance": "试剂1,iron(III) chloride",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_43",
+                "intensity": None,
+                "reactionQuality": "69.70",
+                "cas": "",
+                "molecularFormula": "Cl3Fe",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "162.20",
+                "reactionMoles": "0.43",
+                "id": 4
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "2.00",
+                "smiles": "caesium carbonate",
+                "substance": "试剂2,caesium carbonate",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_44",
+                "intensity": None,
+                "reactionQuality": "2798.80",
+                "cas": "",
+                "molecularFormula": "CCs2O3",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "325.82",
+                "reactionMoles": "8.59",
+                "id": 4
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "copper(II) oxide",
+                "substance": "试剂3,copper(II) oxide",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_45",
+                "intensity": None,
+                "reactionQuality": "34.20",
+                "cas": "",
+                "molecularFormula": "CuO",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "79.55",
+                "reactionMoles": "0.43",
+                "id": 4
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "0.10",
+                "smiles": "1,1'-bi-2-naphthol",
+                "substance": "试剂4,1,1'-bi-2-naphthol",
+                "type": "reagent",
+                "liquidReagentConcentration": "固态",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_46",
+                "intensity": None,
+                "reactionQuality": "123.00",
+                "cas": "",
+                "molecularFormula": "C20H14O2",
+                "singleCockAddVolume": "",
+                "reactionMoleConcentration": "",
+                "solvent": "286.33",
+                "reactionMoles": "0.43",
+                "id": 4
+            },
+            {
+                "limitReagents": False,
+                "equivalent": None,
+                "smiles": "N,N-dimethyl-formamide",
+                "substance": "溶剂1,N,N-dimethyl-formamide",
+                "type": "solvent",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_47",
+                "intensity": None,
+                "reactionQuality": None,
+                "cas": "",
+                "molecularFormula": "C3H7NO",
+                "singleCockAddVolume": "5.45",
+                "reactionMoleConcentration": "",
+                "solvent": "73.09",
+                "reactionMoles": None,
+                "id": 4
+            },
+            {
+                "limitReagents": True,
+                "equivalent": "1.00",
+                "smiles": "NC1=CC=CC=C1",
+                "substance": "NC1=CC=CC=C1",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_48",
+                "intensity": None,
+                "reactionQuality": "400.00",
+                "cas": "",
+                "molecularFormula": "C6H7N",
+                "singleCockAddVolume": "0.41",
+                "reactionMoleConcentration": "",
+                "solvent": "93.13",
+                "reactionMoles": "4.30",
+                "id": 4
+            },
+            {
+                "limitReagents": False,
+                "equivalent": "1.20",
+                "smiles": "BrC2=CC=CC=C2",
+                "substance": "BrC2=CC=CC=C2",
+                "type": "sub",
+                "liquidReagentConcentration": "液体",
+                "reactionVolume": "6.40",
+                "rowId": "row_1794446880577_49",
+                "intensity": None,
+                "reactionQuality": "809.20",
+                "cas": "",
+                "molecularFormula": "C6H5Br",
+                "singleCockAddVolume": "0.54",
+                "reactionMoleConcentration": "",
+                "solvent": "157.01",
+                "reactionMoles": "5.15",
+                "id": 4
+            }
+        ],
+        "MaterialsTableList": [
+            {
+                "type": "reagent",
+                "substance": "试剂1,copper(l) iodide",
+                "smiles": "copper(l) iodide",
+                "solvent": "190.450",
+                "molecularFormula": "CuI",
+                "theoreticalMoles": "0.44",
+                "theoreticalQuality": "83.80",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.57",
+                "cas": "",
+                "intensity": None,
+                "id": 1,
+                "configurationVolume": "0.00",
+                "configurationQuality": "108.94",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂2,potassium carbonate",
+                "smiles": "potassium carbonate",
+                "solvent": "138.210",
+                "molecularFormula": "K2CO3",
+                "theoreticalMoles": "8.78",
+                "theoreticalQuality": "1213.50",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "11.41",
+                "cas": "",
+                "intensity": None,
+                "id": 2,
+                "configurationVolume": "0.00",
+                "configurationQuality": "1577.55",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂3,Pipecolic Acid",
+                "smiles": "Pipecolic Acid",
+                "solvent": "129.160",
+                "molecularFormula": "C6H11NO2",
+                "theoreticalMoles": "0.88",
+                "theoreticalQuality": "113.70",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "1.14",
+                "cas": "",
+                "intensity": None,
+                "id": 3,
+                "configurationVolume": "0.00",
+                "configurationQuality": "147.81",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "溶剂1,N,N-dimethyl-formamide",
+                "smiles": "N,N-dimethyl-formamide",
+                "solvent": "73.090",
+                "molecularFormula": "C3H7NO",
+                "theoreticalMoles": "",
+                "theoreticalQuality": "",
+                "theoreticalVolume": "10.88",
+                "configurationMoles": "",
+                "cas": "",
+                "intensity": None,
+                "id": 4,
+                "configurationVolume": "14.14",
+                "configurationQuality": "",
+                "concentration": ""
+            },
+            {
+                "type": "sub",
+                "substance": "NC1=CC=CC=C1",
+                "smiles": "NC1=CC=CC=C1",
+                "solvent": "91.110",
+                "molecularFormula": "C6H5N",
+                "theoreticalMoles": "34.76",
+                "theoreticalQuality": "3200.00",
+                "theoreticalVolume": "3.28",
+                "configurationMoles": "45.20",
+                "cas": "",
+                "intensity": None,
+                "id": 5,
+                "configurationVolume": "5.00",
+                "configurationQuality": "4160.00",
+                "concentration": "10.60"
+            },
+            {
+                "type": "sub",
+                "substance": "BrC2=CC=CC=C2",
+                "smiles": "BrC2=CC=CC=C2",
+                "solvent": "157.010",
+                "molecularFormula": "C6H5Br",
+                "theoreticalMoles": "41.68",
+                "theoreticalQuality": "6546.40",
+                "theoreticalVolume": "4.40",
+                "configurationMoles": "54.17",
+                "cas": "",
+                "intensity": None,
+                "id": 6,
+                "configurationVolume": "5.72",
+                "configurationQuality": "8510.32",
+                "concentration": "9.47"
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂1,2,3-diphenylcyclopropyldicyclohexylphosphine borane",
+                "smiles": "2,3-diphenylcyclopropyldicyclohexylphosphine borane",
+                "solvent": "480.480",
+                "molecularFormula": "C33H42BP",
+                "theoreticalMoles": "0.22",
+                "theoreticalQuality": "105.70",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.29",
+                "cas": "",
+                "intensity": None,
+                "id": 7,
+                "configurationVolume": "0.00",
+                "configurationQuality": "137.41",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂2,C39H52BrO2PPdSi",
+                "smiles": "C39H52BrO2PPdSi",
+                "solvent": "813.220",
+                "molecularFormula": "C39H52BrO2PPdSi",
+                "theoreticalMoles": "0.22",
+                "theoreticalQuality": "178.90",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.29",
+                "cas": "",
+                "intensity": None,
+                "id": 8,
+                "configurationVolume": "0.00",
+                "configurationQuality": "232.57",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂3,sodium t-butanolate",
+                "smiles": "sodium t-butanolate",
+                "solvent": "96.100",
+                "molecularFormula": "C4H9NaO",
+                "theoreticalMoles": "15.18",
+                "theoreticalQuality": "1458.80",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "19.74",
+                "cas": "",
+                "intensity": None,
+                "id": 9,
+                "configurationVolume": "0.00",
+                "configurationQuality": "1896.44",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "溶剂1,o-xylene",
+                "smiles": "o-xylene",
+                "solvent": "106.170",
+                "molecularFormula": "C8H10",
+                "theoreticalMoles": "",
+                "theoreticalQuality": "",
+                "theoreticalVolume": "5.43",
+                "configurationMoles": "",
+                "cas": "",
+                "intensity": None,
+                "id": 10,
+                "configurationVolume": "7.06",
+                "configurationQuality": "",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂1,1,4-diaza-bicyclo[2.2.2]octane",
+                "smiles": "1,4-diaza-bicyclo[2.2.2]octane",
+                "solvent": "112.180",
+                "molecularFormula": "C6H12N2",
+                "theoreticalMoles": "6.59",
+                "theoreticalQuality": "739.30",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "8.57",
+                "cas": "",
+                "intensity": None,
+                "id": 11,
+                "configurationVolume": "0.00",
+                "configurationQuality": "961.09",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂2,tris(2,2-bipyridine)ruthenium(II) hexafluorophosphate",
+                "smiles": "tris(2,2-bipyridine)ruthenium(II) hexafluorophosphate",
+                "solvent": "859.550",
+                "molecularFormula": "C30H24F12N6P2Ru",
+                "theoreticalMoles": "0.09",
+                "theoreticalQuality": "77.40",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.12",
+                "cas": "",
+                "intensity": None,
+                "id": 12,
+                "configurationVolume": "0.00",
+                "configurationQuality": "100.62",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂3,nickel(II) bromide trihydrate",
+                "smiles": "nickel(II) bromide trihydrate",
+                "solvent": "272.550",
+                "molecularFormula": "Br2H6NiO3",
+                "theoreticalMoles": "0.44",
+                "theoreticalQuality": "119.90",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.57",
+                "cas": "",
+                "intensity": None,
+                "id": 13,
+                "configurationVolume": "0.00",
+                "configurationQuality": "155.87",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂4,hexan-1-amine",
+                "smiles": "hexan-1-amine",
+                "solvent": "101.190",
+                "molecularFormula": "C6H15N",
+                "theoreticalMoles": "6.59",
+                "theoreticalQuality": "666.80",
+                "theoreticalVolume": "0.85",
+                "configurationMoles": "8.57",
+                "cas": "",
+                "intensity": None,
+                "id": 14,
+                "configurationVolume": "5.00",
+                "configurationQuality": "866.84",
+                "concentration": "7.75"
+            },
+            {
+                "type": "solvent",
+                "substance": "溶剂1,dimethyl sulfoxide",
+                "smiles": "dimethyl sulfoxide",
+                "solvent": "78.130",
+                "molecularFormula": "C2H6OS",
+                "theoreticalMoles": "",
+                "theoreticalQuality": "",
+                "theoreticalVolume": "4.58",
+                "configurationMoles": "",
+                "cas": "",
+                "intensity": None,
+                "id": 15,
+                "configurationVolume": "5.95",
+                "configurationQuality": "",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂1,oxalic acid hydrazide",
+                "smiles": "oxalic acid hydrazide",
+                "solvent": "90.080",
+                "molecularFormula": "C2H6N2O2",
+                "theoreticalMoles": "5.27",
+                "theoreticalQuality": "474.70",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "6.85",
+                "cas": "",
+                "intensity": None,
+                "id": 16,
+                "configurationVolume": "0.00",
+                "configurationQuality": "617.11",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂2,potassium hydroxide",
+                "smiles": "potassium hydroxide",
+                "solvent": "56.110",
+                "molecularFormula": "KOH",
+                "theoreticalMoles": "8.78",
+                "theoreticalQuality": "492.60",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "11.41",
+                "cas": "",
+                "intensity": None,
+                "id": 17,
+                "configurationVolume": "0.00",
+                "configurationQuality": "640.38",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂3,tetrabutylammomium bromide",
+                "smiles": "tetrabutylammomium bromide",
+                "solvent": "322.370",
+                "molecularFormula": "C16H36BrN",
+                "theoreticalMoles": "0.44",
+                "theoreticalQuality": "141.80",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.57",
+                "cas": "",
+                "intensity": None,
+                "id": 18,
+                "configurationVolume": "0.00",
+                "configurationQuality": "184.34",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂4,2,5-hexadione",
+                "smiles": "2,5-hexadione",
+                "solvent": "114.140",
+                "molecularFormula": "C6H10O2",
+                "theoreticalMoles": "5.27",
+                "theoreticalQuality": "601.50",
+                "theoreticalVolume": "0.62",
+                "configurationMoles": "6.85",
+                "cas": "",
+                "intensity": None,
+                "id": 19,
+                "configurationVolume": "5.00",
+                "configurationQuality": "781.95",
+                "concentration": "8.50"
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂5,copper(II) oxide",
+                "smiles": "copper(II) oxide",
+                "solvent": "79.550",
+                "molecularFormula": "CuO",
+                "theoreticalMoles": "0.44",
+                "theoreticalQuality": "35.00",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.57",
+                "cas": "",
+                "intensity": None,
+                "id": 20,
+                "configurationVolume": "0.00",
+                "configurationQuality": "45.50",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "溶剂1,water",
+                "smiles": "water",
+                "solvent": "18.020",
+                "molecularFormula": "H2O",
+                "theoreticalMoles": "",
+                "theoreticalQuality": "",
+                "theoreticalVolume": "4.81",
+                "configurationMoles": "",
+                "cas": "",
+                "intensity": None,
+                "id": 21,
+                "configurationVolume": "6.25",
+                "configurationQuality": "",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂1,copper diacetate",
+                "smiles": "copper diacetate",
+                "solvent": "181.630",
+                "molecularFormula": "C4H6CuO4",
+                "theoreticalMoles": "0.43",
+                "theoreticalQuality": "78.00",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.56",
+                "cas": "",
+                "intensity": None,
+                "id": 22,
+                "configurationVolume": "0.00",
+                "configurationQuality": "101.40",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂2,3-(2-(2-methoxyphenyl)-2-oxoethyl)-1-(pyridin-2-yl)-1H-imidazo-3-ium bromide",
+                "smiles": "3-(2-(2-methoxyphenyl)-2-oxoethyl)-1-(pyridin-2-yl)-1H-imidazo-3-ium bromide",
+                "solvent": "374.230",
+                "molecularFormula": "C17H16BrN3O2",
+                "theoreticalMoles": "0.43",
+                "theoreticalQuality": "160.70",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.56",
+                "cas": "",
+                "intensity": None,
+                "id": 23,
+                "configurationVolume": "0.00",
+                "configurationQuality": "208.91",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "溶剂1,neat (no solvent)",
+                "smiles": "neat (no solvent)",
+                "solvent": "0.000",
+                "molecularFormula": "None",
+                "theoreticalMoles": "",
+                "theoreticalQuality": "",
+                "theoreticalVolume": "5.45",
+                "configurationMoles": "",
+                "cas": "",
+                "intensity": None,
+                "id": 24,
+                "configurationVolume": "7.09",
+                "configurationQuality": "",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂1,potassium ethoxide",
+                "smiles": "potassium ethoxide",
+                "solvent": "84.160",
+                "molecularFormula": "C2H5KO",
+                "theoreticalMoles": "8.59",
+                "theoreticalQuality": "723.00",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "11.17",
+                "cas": "",
+                "intensity": None,
+                "id": 25,
+                "configurationVolume": "0.00",
+                "configurationQuality": "939.90",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "溶剂1,1,4-dioxane",
+                "smiles": "1,4-dioxane",
+                "solvent": "88.110",
+                "molecularFormula": "C4H8O2",
+                "theoreticalMoles": "",
+                "theoreticalQuality": "",
+                "theoreticalVolume": "5.45",
+                "configurationMoles": "",
+                "cas": "",
+                "intensity": None,
+                "id": 26,
+                "configurationVolume": "7.09",
+                "configurationQuality": "",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂1,bis-triphenylphosphine-palladium(II) chloride",
+                "smiles": "bis-triphenylphosphine-palladium(II) chloride",
+                "solvent": "701.900",
+                "molecularFormula": "C36H30Cl2P2Pd",
+                "theoreticalMoles": "0.21",
+                "theoreticalQuality": "150.80",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.27",
+                "cas": "",
+                "intensity": None,
+                "id": 27,
+                "configurationVolume": "0.00",
+                "configurationQuality": "196.04",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂2,12-cyclopentyl-6-phenyl-5,6,7,12-tetrahydrodibenzo[c,f][1,5]azastibocine",
+                "smiles": "12-cyclopentyl-6-phenyl-5,6,7,12-tetrahydrodibenzo[c,f][1,5]azastibocine",
+                "solvent": "544.300",
+                "molecularFormula": "C29H28NSb",
+                "theoreticalMoles": "0.43",
+                "theoreticalQuality": "233.80",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.56",
+                "cas": "",
+                "intensity": None,
+                "id": 28,
+                "configurationVolume": "0.00",
+                "configurationQuality": "303.94",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "溶剂1,toluene",
+                "smiles": "toluene",
+                "solvent": "92.140",
+                "molecularFormula": "C7H8",
+                "theoreticalMoles": "",
+                "theoreticalQuality": "",
+                "theoreticalVolume": "5.45",
+                "configurationMoles": "",
+                "cas": "",
+                "intensity": None,
+                "id": 29,
+                "configurationVolume": "7.09",
+                "configurationQuality": "",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂1,iron(III) chloride",
+                "smiles": "iron(III) chloride",
+                "solvent": "162.200",
+                "molecularFormula": "Cl3Fe",
+                "theoreticalMoles": "0.43",
+                "theoreticalQuality": "69.70",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.56",
+                "cas": "",
+                "intensity": None,
+                "id": 30,
+                "configurationVolume": "0.00",
+                "configurationQuality": "90.61",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂2,caesium carbonate",
+                "smiles": "caesium carbonate",
+                "solvent": "325.820",
+                "molecularFormula": "CCs2O3",
+                "theoreticalMoles": "8.59",
+                "theoreticalQuality": "2798.80",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "11.17",
+                "cas": "",
+                "intensity": None,
+                "id": 31,
+                "configurationVolume": "0.00",
+                "configurationQuality": "3638.44",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂3,copper(II) oxide",
+                "smiles": "copper(II) oxide",
+                "solvent": "79.550",
+                "molecularFormula": "CuO",
+                "theoreticalMoles": "0.43",
+                "theoreticalQuality": "34.20",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.56",
+                "cas": "",
+                "intensity": None,
+                "id": 32,
+                "configurationVolume": "0.00",
+                "configurationQuality": "44.46",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "试剂4,1,1'-bi-2-naphthol",
+                "smiles": "1,1'-bi-2-naphthol",
+                "solvent": "286.330",
+                "molecularFormula": "C20H14O2",
+                "theoreticalMoles": "0.43",
+                "theoreticalQuality": "123.00",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "0.56",
+                "cas": "",
+                "intensity": None,
+                "id": 33,
+                "configurationVolume": "0.00",
+                "configurationQuality": "159.90",
+                "concentration": ""
+            }
+        ],
+        "SynthesisMolReadList": [],
+        "reactionParams": []
+    },
+    "experimentLog2": {
+        "ReactionConditions": {
+            "environment": "1",
+            "temperature": "40",
+            "seal": "1",
+            "time": "480",
+            "speed": "900"
         },
-        "experimentLog2": {
-            "ReactionConditions": {
-                "temperature": "40",
-                "time": "1",
-                "speed": "500",
-                "seal": "1",
-                "environment": "1"
-            },
-            "lightData": {
-                "type": "1",
-                "typeList": [
-                    {
-                        "label": "照射方式1",
-                        "value": "1"
-                    },
-                    {
-                        "label": "照射方式2",
-                        "value": "2"
-                    }
-                ],
-                "list": [
-                    {
-                        "status": "1",
-                        "WattageStart": "",
-                        "WattageType": "",
-                        "time": [
-                            {
-                                "start": "",
-                                "end": ""
-                            }
-                        ]
-                    },
-                    {
-                        "status": "1",
-                        "WattageStart": "",
-                        "WattageType": "",
-                        "time": [
-                            {
-                                "start": "",
-                                "end": ""
-                            }
-                        ]
-                    },
-                    {
-                        "status": "1",
-                        "WattageStart": "",
-                        "WattageType": "",
-                        "time": [
-                            {
-                                "start": "",
-                                "end": ""
-                            }
-                        ]
-                    },
-                    {
-                        "status": "1",
-                        "WattageStart": "",
-                        "WattageType": "",
-                        "time": [
-                            {
-                                "start": "",
-                                "end": ""
-                            }
-                        ]
-                    }
-                ]
-            },
-            "electricityData": {
-                "type": "1",
-                "list": []
-            },
-            "gasData": {}
-        },
-        "experimentLog3": {
-            "coolingTime": "1",
-            "quenchingAgentData": [],
-            "internalStandardData": [],
-            "productDilutionData": [
+        "lightData": {
+            "type": "1",
+            "typeList": [
                 {
-                    "name": "MeCN",
-                    "beforeConcentration": "1",
-                    "afterConcentration": "1",
-                    "procedure": {
-                        "diluent1": "100",
-                        "diluent2": "100",
-                        "diluent3": "100",
-                        "diluent4": "100",
-                        "diluent5": "100"
-                    }
+                    "label": "照射方式1",
+                    "value": "1"
+                },
+                {
+                    "label": "照射方式2",
+                    "value": "2"
                 }
             ],
-            "extractionData": [
+            "list": [
                 {
-                    "name": "",
-                    "volume": "",
-                    "time": "",
-                    "times": "",
-                    "type": "1"
-                }
-            ],
-            "filtrationData": [
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
+                },
                 {
-                    "name": "0.22微米",
-                    "filterTime": "1"
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
+                },
+                {
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
+                },
+                {
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
                 }
             ]
         },
-        "experimentLog4": {
-            "instrumentName": "",
-            "instrumentInstruments": [],
-            "NMR": {
-                "analyseArr": [
-                    {
-                        "name": "H NMR",
-                        "status": False
-                    },
-                    {
-                        "name": "C NMR",
-                        "status": False
-                    },
-                    {
-                        "name": "F NMR",
-                        "status": False
-                    },
-                    {
-                        "name": "P NMR",
-                        "status": False
-                    },
-                    {
-                        "name": "COSY",
-                        "status": False
-                    },
-                    {
-                        "name": "HSQC",
-                        "status": False
-                    },
-                    {
-                        "name": "HMBC",
-                        "status": False
-                    },
-                    {
-                        "name": "NOESY",
-                        "status": False
-                    }
-                ],
-                "solvent": {
-                    "name": "",
-                    "volume": "",
-                    "temperature": "",
-                    "frequency": ""
-                }
-            },
-            "MS": [],
-            "LC": [],
-            "LCMS": [],
-            "GC": [],
-            "UV": [
+        "electricityData": {
+            "type": "1",
+            "list": []
+        },
+        "gasData": {}
+    },
+    "experimentLog3": {
+        "quenchingAgentData": [],
+        "productDilutionData": [
+            {
+                "name": "MeCN",
+                "afterConcentration": "5.69 × 10⁻⁵",
+                "procedure": {
+                    "diluent5": "10.00",
+                    "diluent4": "10.00",
+                    "diluent3": "250.00",
+                    "diluent2": "4000.00",
+                    "diluent1": "500.00"
+                },
+                "beforeConcentration": "0.69"
+            }
+        ],
+        "internalStandardData": [
+            {
+                "internalConcentration": "4.30",
+                "name": "BENZANILIDE",
+                "addVolume": "500.00",
+                "molecularWeight": "197.23",
+                "internalVolume": "22.00",
+                "moles": "2.15",
+                "internalQuality": "18636.26"
+            }
+        ],
+        "filtrationData": [
+            {
+                "name": "0.22微米",
+                "filterTime": "3"
+            }
+        ],
+        "extractionData": [
+            {
+                "name": "",
+                "volume": "",
+                "time": "",
+                "times": "",
+                "type": "1"
+            }
+        ],
+        "coolingTime": "10"
+    },
+    "experimentLog4": {
+        "instrumentName": "",
+        "instrumentInstruments": [],
+        "NMR": {
+            "analyseArr": [
                 {
-                    "wavelengthStart": "",
-                    "wavelengthEnd": "",
-                    "velocity": "",
-                    "width": "",
-                    "solvent": "",
-                    "concentration": ""
+                    "name": "H NMR",
+                    "status": False
+                },
+                {
+                    "name": "C NMR",
+                    "status": False
+                },
+                {
+                    "name": "F NMR",
+                    "status": False
+                },
+                {
+                    "name": "P NMR",
+                    "status": False
+                },
+                {
+                    "name": "COSY",
+                    "status": False
+                },
+                {
+                    "name": "HSQC",
+                    "status": False
+                },
+                {
+                    "name": "HMBC",
+                    "status": False
+                },
+                {
+                    "name": "NOESY",
+                    "status": False
                 }
             ],
-            "IR": [
-                {
-                    "resolutionStart": "",
-                    "resolutionEnd": "",
-                    "scanNumber": "",
-                    "Wavenumber": ""
-                }
-            ],
-            "XRD": [
-                {
-                    "startAngle": "",
-                    "endAngle": "",
-                    "stepLength": "",
-                    "scanSpeed": "",
-                    "scanDuration": "",
-                    "mode": ""
-                }
-            ]
-        }
+            "solvent": {
+                "name": "",
+                "volume": "",
+                "temperature": "",
+                "frequency": ""
+            }
+        },
+        "MS": [],
+        "LC": [],
+        "LCMS": [],
+        "GC": [],
+        "UV": [
+            {
+                "wavelengthStart": "",
+                "wavelengthEnd": "",
+                "velocity": "",
+                "width": "",
+                "solvent": "",
+                "concentration": ""
+            }
+        ],
+        "IR": [
+            {
+                "resolutionStart": "",
+                "resolutionEnd": "",
+                "scanNumber": "",
+                "Wavenumber": ""
+            }
+        ],
+        "XRD": [
+            {
+                "startAngle": "",
+                "endAngle": "",
+                "stepLength": "",
+                "scanSpeed": "",
+                "scanDuration": "",
+                "mode": ""
+            }
+        ]
     }
 }
-    main('1',data10["condition"],1)
+    main('1',data,1)
     # main('1',data4,2)
 
 

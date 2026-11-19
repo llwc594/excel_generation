@@ -1,0 +1,8 @@
+Flask-SQLAlchemy==3.1.1
+matplotlib==3.9.4
+munkres==1.1.4
+olefile==0.47
+psycopg2-binary==2.9.12
+pycairo==1.28.0
+pycryptodome==3.23.0
+waitress==3.0.2

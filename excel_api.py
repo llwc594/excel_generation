@@ -24,7 +24,7 @@ from openpyxl.styles import Alignment, Font, Border, Side
 
 from  api_8 import main as main_8
 from  api_24 import main as main_24
-from  api_48 import main as main_48
+# from  api_48 import main as main_48
 from  api_96 import main as main_96
 
 # 常量定义
@@ -106,7 +106,7 @@ class convert_format():
                             mimetype='application/zip',
                             as_attachment=True,
                             download_name=f'{id}.zip')
-                    elif condition["experimentLog1"]["wellPlates"] =="48孔板1ml温":
+                    # elif condition["experimentLog1"]["wellPlates"] =="48孔板1ml温":
 
                         main_48(id,condition,1)
                         memory_file = BytesIO()

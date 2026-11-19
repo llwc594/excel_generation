@@ -17,24 +17,12 @@ import os
 import shutil
 from pathlib import Path
 from typing import Any, List, Dict, Union
-import openpyxl
-from openpyxl.reader.excel import load_workbook
-from openpyxl.workbook import Workbook
+
+from wolfxl import load_workbook, Workbook
 from typing import Dict, List, Any, Union, Tuple, Optional
 import xlwings as xw
-from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
-import aspose.cells as ac
-# 常量定义
-# BASE_PATH = r"D:/api/python/表格生成/逆合成"
-# BASE_PATH1 = r"D:/api/python/模板/逆合成"
-# crystallize_BASE_PATH = r"D:/api/python/表格生成/结晶平台"
-# crystallize_BASE_PATH1 = r"D:/api/python/模板/结晶平台"
-
-# BASE_PATH = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/表格生成/逆合成"
-# BASE_PATH1 = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/模板/逆合成"
-# crystallize_BASE_PATH = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/表格生成/结晶平台"
-# crystallize_BASE_PATH1 = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/模板/结晶平台"
-#
+from wolfxl.styles import Alignment, Font, Border, Side, PatternFill
+# from aspose.cells_foss import Workbook
 
 BASE_PATH = r"./generation_zy"
 BASE_PATH1 = r"./逆合成"
@@ -72,7 +60,7 @@ class ExcelUtils:
     @staticmethod
     def open_workbook(file_path: str) -> Workbook:
         """打开Excel文件"""
-        return openpyxl.load_workbook(file_path)
+        return load_workbook(file_path, modify=True)
 
     @staticmethod
     def save_workbook(workbook: Workbook, save_path: str) -> None:
@@ -102,7 +90,7 @@ class ExcelUtils:
     @staticmethod
     def copy_workbook(source_path: str, target_path: str) -> None:
         """复制Excel文件"""
-        wb = openpyxl.load_workbook(source_path)
+        wb = load_workbook(source_path, modify=True)
         ExcelUtils.save_workbook(wb, target_path)
         print(f"文件已成功复制到: {target_path}")
 
@@ -161,15 +149,19 @@ class ExcelUtils:
                 sheet.cell(row=row_num, column=i).value = value
 
     @staticmethod
-    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict]) -> None:
+    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict], start_row: int = None) -> None:
         """将记录写入工作表"""
         sheet = workbook[sheet_name]
-
-        # 写入数据
-        for record in records:
-            row = list(record.values())
-            sheet.append(row)
-
+        
+        # 如果不传 start_row，则默认找当前最大行 + 1
+        if start_row is None:
+            start_row = sheet.max_row + 1
+            
+        for i, record in enumerate(records):
+            row_vals = list(record.values())
+            # 显式遍历每一列，用 cell(row, col, value) 写入，避开 wolfxl 的 append 缓冲池问题
+            for j, val in enumerate(row_vals):
+                sheet.cell(row=start_row + i, column=j + 1, value=val)
     @staticmethod
     def clear_directory(folder_path: str) -> None:
         """
@@ -262,6 +254,20 @@ class ExcelUtils:
     @staticmethod
     def batch_repair_folder(folder_path, backup=False, extensions=('.xlsx', '.xls', '.xlsm', '.xlsb')):
         def repair_excel(file_path, backup=False):
+            try:
+                # FOSS 版目前主要支持 .xlsx，如果是 .xls 等可能需要其他库辅助
+                if backup:
+                    backup_path = file_path + ".bak"
+                    shutil.copy2(file_path, backup_path)
+                    print(f"已备份: {backup_path}")
+                    
+                wb = Workbook(file_path)
+                wb.save(file_path)
+                print(f"修复成功: {file_path}")
+                return True
+            except Exception as e:
+                print(f"修复失败: {file_path}, 错误: {e}")
+                return False
             """
             修复单个 Excel 文件
             :param file_path: 文件路径
@@ -286,24 +292,27 @@ class ExcelUtils:
         :param backup: 是否备份原文件
         :param extensions: 要处理的文件扩展名元组
         """
-        if not os.path.isdir(folder_path):
-            print(f"错误: {folder_path} 不是有效文件夹")
-            return
+        try:
+            if not os.path.isdir(folder_path):
+                print(f"错误: {folder_path} 不是有效文件夹")
+                return
 
-        files = [f for f in os.listdir(folder_path) 
-                if "任务" in f and f.lower().endswith(('.xlsx', '.xls', '.xlsm', '.xlsb'))]
-        
-        if not files:
-            print("未找到 Excel 文件")
-            return
+            files = [f for f in os.listdir(folder_path) 
+                    if "任务" in f and f.lower().endswith(('.xlsx', '.xls', '.xlsm', '.xlsb'))]
+            
+            if not files:
+                print("未找到 Excel 文件")
+                return
 
-        success_count = 0
-        for filename in files:
-            full_path = os.path.join(folder_path, filename)
-            if repair_excel(full_path, backup):
-                success_count += 1
+            success_count = 0
+            for filename in files:
+                full_path = os.path.join(folder_path, filename)
+                if repair_excel(full_path, backup):
+                    success_count += 1
 
-        print(f"批量修复完成: 成功 {success_count}/{len(files)}")
+            print(f"批量修复完成: 成功 {success_count}/{len(files)}")
+        except:
+            print(f"批量修复失败")
 
 
 
@@ -435,7 +444,7 @@ class ReactionProcessor:
         book = None
         ws = None
         if os.path.exists(input_path):
-            book = load_workbook(input_path)
+            book = load_workbook(input_path, modify=True)
             if "试剂数据" in book.sheetnames:
                 ws = book["试剂数据"]
             else:
@@ -1210,7 +1219,7 @@ class ReactionProcessor:
         ExcelUtils.modify_row(wb, 'Sheet', rowss, headers)
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data, start_row_idx)
         # 找出所有批次标题行的位置
         batch_start_rows = []
         for idx, item in enumerate(grouped_data):
@@ -1292,7 +1301,7 @@ class ReactionProcessor:
 
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data,start_row_idx)
 
         # 合并所有批次的单元格并设置居中
 
@@ -2103,7 +2112,7 @@ class ReactionProcessor:
                            其中 Locate 为 1~24 的整数，对应 B2:G5 的行优先顺序
         """
         environment = self.post_data['experimentLog2']['ReactionConditions']['environment']
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path, modify=True)
 
         table_name='HopperStack'
 
@@ -2403,7 +2412,7 @@ class ReactionProcessor:
 
         max_num = 24-llwc_num
         for i, (chem1, chem2,chem3,chem4,chem5,chem6,chem7,chem8) in enumerate(data_24[:max_num]):
-            row = start + i * 4
+            row = start + i * 8
             if chem1:
                 ExcelUtils.modify_cell(wb, "孔位信息", f"D{row}", chem1)
             if chem2:
@@ -2528,7 +2537,7 @@ class ReactionProcessor:
         1. 根据传入的 fill_cells 列表批量标黄单元格。
         2. 根据 plate_type / condition 修改 D2, E2, F2 的值（逻辑保持不变）。
         """
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path, modify=True)
         if "PlateStack" not in wb.sheetnames:
             raise ValueError("工作簿中不存在 'PlateStack' 子表")
         ws = wb["PlateStack"]
@@ -2618,17 +2627,28 @@ class ReactionProcessor:
             n = (len_2 - 1) // 12 + 1  # 向上取整，得到需要填充的单元格数量（1~3）
             n = min(n, len(CELLS_ROW4))
             fill_cells.extend(CELLS_ROW4[:n])
+        # #稀释
+        # product_dilution_data = self.post_data["experimentLog3"].get("productDilutionData", [])
+        # if product_dilution_data:
+        #     fill_cells.append("D4")
+        #     fill_cells.append("D5")
+        # #淬灭剂，内标
+        # quenchingAgentData = self.post_data['experimentLog3']["quenchingAgentData"]
+        # internalStandardData = self.post_data['experimentLog3']["internalStandardData"]
+        # if quenchingAgentData and internalStandardData:
+        #     if 'D3'  not in fill_cells:
+        #         fill_cells.append("D3")
         #稀释
         product_dilution_data = self.post_data["experimentLog3"].get("productDilutionData", [])
         if product_dilution_data:
-            fill_cells.append("D4")
-            fill_cells.append("D5")
+            fill_cells.append("D8")
+            fill_cells.append("D9")
         #淬灭剂，内标
         quenchingAgentData = self.post_data['experimentLog3']["quenchingAgentData"]
         internalStandardData = self.post_data['experimentLog3']["internalStandardData"]
-        if quenchingAgentData and internalStandardData:
-            if 'D3'  not in fill_cells:
-                fill_cells.append("D3")
+        if quenchingAgentData or internalStandardData:
+            if 'D6'  not in fill_cells:
+                fill_cells.append("D6")
         #萃取
         extractionData = self.post_data['experimentLog3']["extractionData"]
         if extractionData and 'D2' not in fill_cells:
@@ -2860,7 +2880,7 @@ class ReactionProcessor:
             for age in range(1, self.hole_number + 1):
                 if quenchingAgent_Volume_num ==1:
                     ExcelUtils.modify_row(wb, "加淬灭液|||移液信息", age + 1,
-                                          ["SS-A03", 12, "B01-FY48", age, int(quenchingAgent_Volume),
+                                          ["A02-12", 12, "B01-FY48", age, int(quenchingAgent_Volume),
                                            pipette_location, gun_head + 1], start_col=1)
                 else:
                     #获取当前横排需要用的量
@@ -2875,7 +2895,7 @@ class ReactionProcessor:
                     plate_remaining -= vol_per_hole
 
                     ExcelUtils.modify_row(wb, "加淬灭液|||移液信息", age + 1,
-                                          ["SS-A03", 12-plate_counter, "B01-FY48", age, int(quenchingAgent_Volume),
+                                          ["A02-12", 12-plate_counter, "B01-FY48", age, int(quenchingAgent_Volume),
                                            pipette_location, gun_head + 1], start_col=1)
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -2933,7 +2953,7 @@ class ReactionProcessor:
         for age in range(1, self.hole_number + 1):
             if internalStandard_Volume_num ==1:
                 ExcelUtils.modify_row(wb, "加内标|||移液信息", age + 1,
-                                      ["SS-A03", internal_standard_used_rows , "B01-FY48", age,
+                                      ["A02-12", internal_standard_used_rows , "B01-FY48", age,
                                        int(internalStandard_Volume) ,
                                        pipette_location, gun_head + 1], start_col=1)
 
@@ -2951,7 +2971,7 @@ class ReactionProcessor:
                 plate_remaining -= vol_per_hole
 
                 ExcelUtils.modify_row(wb, "加内标|||移液信息", age + 1,
-                                      ["SS-A03", internal_standard_used_rows -plate_counter , "B01-FY48", age, int(internalStandard_Volume),
+                                      ["A02-12", internal_standard_used_rows -plate_counter , "B01-FY48", age, int(internalStandard_Volume),
                                        pipette_location, gun_head + 1], start_col=1)
                 # self.usage_12_hole = internal_standard_used_rows - int(internalStandard_Volume_num)
         if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -3308,11 +3328,11 @@ class ReactionProcessor:
             wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf11"])
             procedure = data.get("procedure", {})
 
-            self._process_diluent(wb, "加稀释液-反应|||移液信息", procedure.get("diluent1"), True)
-            self._process_diluent(wb, "加稀释液-中转|||移液信息", procedure.get("diluent2"), True, "B02-96")
-            self._process_diluent(wb, "加稀释液-过滤|||移液信息", procedure.get("diluent3"), False, "2A01-GL48")
+            self._process_diluent(wb, "加稀释液-反应|||移液信息", int(float(procedure.get("diluent1"))), True)
+            self._process_diluent(wb, "加稀释液-中转|||移液信息", int(float(procedure.get("diluent2"))), True, "B02-96")
+            self._process_diluent(wb, "加稀释液-过滤|||移液信息", int(float(procedure.get("diluent3"))), False, "2A01-GL48")
             #反应板混匀
-            self._process_mixing(wb, procedure.get("diluent4"), procedure.get("diluent5"))
+            self._process_mixing(wb, int(float(procedure.get("diluent4"))), int(float(procedure.get("diluent5"))))
 
             ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["wf11"])
 
@@ -3403,10 +3423,10 @@ def main(id,post_data: dict,source) -> None:
     processor = ReactionProcessor(id,post_data)
     processor.process(source)
 
-    if source ==1:
-        ExcelUtils.batch_repair_folder(BASE_PATH)
-    else:
-        ExcelUtils.batch_repair_folder(crystallize_BASE_PATH)
+    # if source ==1:
+    #     ExcelUtils.batch_repair_folder(BASE_PATH)
+    # else:
+    #     ExcelUtils.batch_repair_folder(crystallize_BASE_PATH)
 
 if __name__ == "__main__":
     #逆合成

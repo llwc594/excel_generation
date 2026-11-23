@@ -17,12 +17,14 @@ import os
 import shutil
 from pathlib import Path
 from typing import Any, List, Dict, Union
-import openpyxl
-from openpyxl.reader.excel import load_workbook
-from openpyxl.workbook import Workbook
+
+
 from typing import Dict, List, Any, Union, Tuple, Optional
 import xlwings as xw
-from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
+
+from wolfxl import load_workbook, Workbook
+from wolfxl.styles import Alignment, Font, Border, Side,PatternFill
+
 import aspose.cells as ac
 # 常量定义
 # BASE_PATH = r"D:/api/python/表格生成/逆合成"
@@ -72,7 +74,7 @@ class ExcelUtils:
     @staticmethod
     def open_workbook(file_path: str) -> Workbook:
         """打开Excel文件"""
-        return openpyxl.load_workbook(file_path)
+        return load_workbook(file_path)
 
     @staticmethod
     def save_workbook(workbook: Workbook, save_path: str) -> None:
@@ -102,7 +104,7 @@ class ExcelUtils:
     @staticmethod
     def copy_workbook(source_path: str, target_path: str) -> None:
         """复制Excel文件"""
-        wb = openpyxl.load_workbook(source_path)
+        wb = load_workbook(source_path)
         ExcelUtils.save_workbook(wb, target_path)
         print(f"文件已成功复制到: {target_path}")
 
@@ -161,15 +163,19 @@ class ExcelUtils:
                 sheet.cell(row=row_num, column=i).value = value
 
     @staticmethod
-    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict]) -> None:
+    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict], start_row: int = None) -> None:
         """将记录写入工作表"""
         sheet = workbook[sheet_name]
-
-        # 写入数据
-        for record in records:
-            row = list(record.values())
-            sheet.append(row)
-
+        
+        # 如果不传 start_row，则默认找当前最大行 + 1
+        if start_row is None:
+            start_row = sheet.max_row + 1
+            
+        for i, record in enumerate(records):
+            row_vals = list(record.values())
+            # 显式遍历每一列，用 cell(row, col, value) 写入
+            for j, val in enumerate(row_vals):
+                sheet.cell(row=start_row + i, column=j + 1, value=val)
     @staticmethod
     def clear_directory(folder_path: str) -> None:
         """
@@ -356,27 +362,7 @@ class ReactionProcessor:
         """生成所有Excel文件"""
         self._generate_excel_files()
         if self.type == 1:
-
-            if self.number_tasks == 1:
-                #添加hiwo物料到信息表格
-                self._create_excel_xxx(TEMPLATE_PATHS["mate_info1"], TEMPLATE_PATHS["information"], 1)
-
-                # 内标等试剂
-                self._create_excel_xxx(TEMPLATE_PATHS["mate_info2"], TEMPLATE_PATHS["information"], 100)
-                #sowo物料
-                self._create_excel_ttt(200)
-                self._create_excel_information(200, 7, TEMPLATE_PATHS["information"])
-
-            else:
-                self._create_excel_xxx(TEMPLATE_PATHS["mate_info1"], TEMPLATE_PATHS["information"], 1)
-                #第二次任务
-                self._create_excel_xxx(TEMPLATE_PATHS["mate_info1"].replace('1-1','1-2'), TEMPLATE_PATHS["information"], 100)
-                # 内标等试剂
-                self._create_excel_xxx(TEMPLATE_PATHS["mate_info2"], TEMPLATE_PATHS["information"], 200)
-                # sowo物料
-                self._create_excel_ttt(300)
-                self._create_excel_information(300, 7, TEMPLATE_PATHS["information"])
-            self._create_excel_material(TEMPLATE_PATHS["information"])
+            pass
         elif self.type == 2:
 
             self._create_excel_xxx(crystallize_TEMPLATE_PATHS["mate_info1"], crystallize_TEMPLATE_PATHS["information"],1)
@@ -886,22 +872,46 @@ class ReactionProcessor:
         return jaccard, length_sim, combined, intersection, common_names
 
     def _generate_excel_files(self) -> None:
+        def _blank(v):
+            return v is None or (isinstance(v, str) and v.strip() == '')
+
+        def _is_list_empty(items, key='name'):
+            items = items or []
+            return not any(isinstance(i, dict) and not _blank(i.get(key)) for i in items)
+
         """生成所有Excel文件"""
         if self.type == 1:
-            # 添加淬灭剂数据
-            self._create_task_quencher()
-            # 添加内标数据
-            self._create_task_internal_standard()
+            experimentLog3 = self.post_data.get("experimentLog3",{})
+
+            if not experimentLog3.get("quenchingAgentData",[]) and not experimentLog3.get("internalStandardData",[]) and not experimentLog3.get("productDilutionData",[]) and _is_list_empty(experimentLog3.get("extractionData",[])) and _is_list_empty(experimentLog3.get("filtrationData",[])):
+                judge_excel = 'WF05'
+                print(f"只生成WF05移液表格，其它不生成")
+                pass
+            elif not experimentLog3.get("productDilutionData",[]) and _is_list_empty(experimentLog3.get("extractionData",[])) and  _is_list_empty(experimentLog3.get("filtrationData",[])):
+                judge_excel = 'WF02'
+                print(f"使用WF02表格，生成内标和淬灭液信息")
+            else:
+                judge_excel = 'WF11'
+                print(f"正常生成表格")
+            if judge_excel !="WF05":
+                # 添加淬灭剂数据
+                quencher_age = self._create_task_quencher(judge_excel)
+                # 添加内标数据
+                self._create_task_internal_standard(judge_excel,quencher_age)
             # 添加物料表信息
             self.data_list_24, self.data_list_12 = self._create_mate_info()
             # 添加任务表信息
             transfer_records_12, transfer_records_24, transfer_records_2 = self._create_w11_task()
-            # 添加任务配置
-            self._create_task_configuration()
-            # 添加稀释数据
-            self._create_dilution_data()
-            # 添加萃取
-            self._create_task_extract()
+            if judge_excel == 'WF11' or judge_excel == 'WF02' :
+                # 添加任务配置
+                self._create_task_configuration()
+                if judge_excel == 'WF11':
+                    # 添加稀释数据
+                    self._create_dilution_data()
+                    # 添加萃取
+                    self._create_task_extract()
+            
+
             # 添加sowo物料数据
             excel_list,excel_list_2 = self._create_sowo_edit_stuff()
             # 添加sowo任务数据
@@ -909,6 +919,29 @@ class ReactionProcessor:
             self.modify_stack_table(transfer_records_12, transfer_records_24, transfer_records_2, BASE_PATH1, BASE_PATH)
             self.write_codes_to_inner_hopper_stack(fr"{BASE_PATH}/Materials-stack4列.xlsx",
                                                fr"{BASE_PATH}/Materials-stack4列.xlsx", excel_list, excel_list_2)
+
+            if self.number_tasks == 1:
+                #添加hiwo物料到信息表格
+                self._create_excel_xxx(TEMPLATE_PATHS["mate_info1"], TEMPLATE_PATHS["information"], 1)
+
+                # # 内标等试剂
+                if judge_excel !="WF05":
+                    self._create_excel_xxx(TEMPLATE_PATHS["mate_info2"], TEMPLATE_PATHS["information"], 100)
+
+                #sowo物料
+                self._create_excel_ttt(200)
+                self._create_excel_information(200, 7, TEMPLATE_PATHS["information"])
+
+            else:
+                self._create_excel_xxx(TEMPLATE_PATHS["mate_info1"], TEMPLATE_PATHS["information"], 1)
+                #第二次任务
+                self._create_excel_xxx(TEMPLATE_PATHS["mate_info1"].replace('1-1','1-2'), TEMPLATE_PATHS["information"], 100)
+                # 内标等试剂
+                self._create_excel_xxx(TEMPLATE_PATHS["mate_info2"], TEMPLATE_PATHS["information"], 200)
+                # sowo物料
+                self._create_excel_ttt(300)
+                self._create_excel_information(300, 7, TEMPLATE_PATHS["information"])
+            self._create_excel_material(TEMPLATE_PATHS["information"])
         elif self.type == 2:
             # 重新写 函数 生成出表格
             self.data_list_24, self.data_list_12 = self._create_crystallize_mate_info()
@@ -1210,7 +1243,7 @@ class ReactionProcessor:
         ExcelUtils.modify_row(wb, 'Sheet', rowss, headers)
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data,start_row_idx)
         # 找出所有批次标题行的位置
         batch_start_rows = []
         for idx, item in enumerate(grouped_data):
@@ -1292,7 +1325,7 @@ class ReactionProcessor:
 
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data,start_row_idx)
 
         # 合并所有批次的单元格并设置居中
 
@@ -2103,11 +2136,11 @@ class ReactionProcessor:
                            其中 Locate 为 1~24 的整数，对应 B2:G5 的行优先顺序
         """
         environment = self.post_data['experimentLog2']['ReactionConditions']['environment']
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path)
         if environment =='2':
             table_name='HopperStack'
         else:
-            if len(excel_list) >=5:
+            if len(excel_list) >5:
                 table_name = 'HopperStack'
             else:
                 table_name='TransferHopperStack'
@@ -2533,7 +2566,7 @@ class ReactionProcessor:
         1. 根据传入的 fill_cells 列表批量标黄单元格。
         2. 根据 plate_type / condition 修改 D2, E2, F2 的值（逻辑保持不变）。
         """
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path)
         if "PlateStack" not in wb.sheetnames:
             raise ValueError("工作簿中不存在 'PlateStack' 子表")
         ws = wb["PlateStack"]
@@ -2804,17 +2837,28 @@ class ReactionProcessor:
                     self.gun_head_dict[pipette_location].append(gun_head + 1)
         return transfer_records_12, transfer_records_24, transfer_records_2
 
-    def _create_task_quencher(self):
-
+    def _create_task_quencher(self,judge_excel):
+        if judge_excel == 'WF05':
+            
+            ExcelUtils.copy_workbook(
+            f"{BASE_PATH1}/hiwo任务05-48-01-02.xlsx",
+            TEMPLATE_PATHS["wf11"])
+        elif judge_excel =='WF02':
+            ExcelUtils.copy_workbook(
+            f"{BASE_PATH1}/hiwo任务02.xlsx",
+            TEMPLATE_PATHS["wf11"])
+        else:
+            ExcelUtils.copy_workbook(
+            f"{BASE_PATH1}/hiwo任务11-48-03.xlsx",
+            TEMPLATE_PATHS["wf11"]
+        )
         ExcelUtils.copy_workbook(
             f"{BASE_PATH1}/hiwo物料-48-03.xlsx",
             TEMPLATE_PATHS["mate_info2"]
         )
 
-        ExcelUtils.copy_workbook(
-            f"{BASE_PATH1}/hiwo任务11-48-03.xlsx",
-            TEMPLATE_PATHS["wf11"]
-        )
+
+
         # 淬灭剂
         quenchingAgentData = self.post_data['experimentLog3']["quenchingAgentData"]
 
@@ -2866,7 +2910,7 @@ class ReactionProcessor:
             for age in range(1, self.hole_number + 1):
                 if quenchingAgent_Volume_num ==1:
                     ExcelUtils.modify_row(wb, "加淬灭液|||移液信息", age + 1,
-                                          ["SS-A03", 12, "B01-FY48", age, int(quenchingAgent_Volume),
+                                          ["A02-12", 12, "B01-FY48", age, int(quenchingAgent_Volume),
                                            pipette_location, gun_head + 1], start_col=1)
                 else:
                     #获取当前横排需要用的量
@@ -2881,14 +2925,14 @@ class ReactionProcessor:
                     plate_remaining -= vol_per_hole
 
                     ExcelUtils.modify_row(wb, "加淬灭液|||移液信息", age + 1,
-                                          ["SS-A03", 12-plate_counter, "B01-FY48", age, int(quenchingAgent_Volume),
+                                          ["A02-12", 12-plate_counter, "B01-FY48", age, int(quenchingAgent_Volume),
                                            pipette_location, gun_head + 1], start_col=1)
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)
             ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["wf11"])
-
-    def _create_task_internal_standard(self):
+            return age
+    def _create_task_internal_standard(self,judge_excel,quencher_age):
         # 内标数据
         internalStandardData = self.post_data['experimentLog3']["internalStandardData"]
         if not internalStandardData:
@@ -2908,14 +2952,14 @@ class ReactionProcessor:
         wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["mate_info2"])
 
         """quenching_used_rows[0]-1: 内标使用的最小孔位-1就是未使用的"""
-        internal_standard_used_rows = 13- quenchingAgent_Volume_num
+        internal_standard_used_rows = 12- quenchingAgent_Volume_num
         # 计算所有孔位内标的使用量
         internalStandard_Volume_all = int(internalStandard_Volume) * sum(len(sublist) for sublist in self.perforated_plate)
 
         # 需要添加几个格子的淬灭剂
         internalStandard_Volume_num = (internalStandard_Volume_all + 18000 - 1) // 18000
         for num in range(internalStandard_Volume_num):
-            ExcelUtils.modify_cell(wb, "孔位信息", f'D{internal_standard_used_rows - num}', internalStandard)
+            ExcelUtils.modify_cell(wb, "孔位信息", f'D{internal_standard_used_rows - num +1}', internalStandard)
 
         ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["mate_info2"])
 
@@ -2937,9 +2981,14 @@ class ReactionProcessor:
         plate_counter = 0
         plate_remaining = 18000  # 每个孔板最大容量20ml 取(18000μl)
         for age in range(1, self.hole_number + 1):
+            if judge_excel =='WF02':
+                table_name = '加淬灭液|||移液信息'
+            else:
+                quencher_age = 0
+                table_name = '加内标|||移液信息'
             if internalStandard_Volume_num ==1:
-                ExcelUtils.modify_row(wb, "加内标|||移液信息", age + 1,
-                                      ["SS-A03", internal_standard_used_rows , "B01-FY48", age,
+                ExcelUtils.modify_row(wb, table_name, age + 1+quencher_age,
+                                      ["A02-12", internal_standard_used_rows , "B01-FY48", age,
                                        int(internalStandard_Volume) ,
                                        pipette_location, gun_head + 1], start_col=1)
 
@@ -2956,8 +3005,8 @@ class ReactionProcessor:
                 # 更新当前孔板剩余容量
                 plate_remaining -= vol_per_hole
 
-                ExcelUtils.modify_row(wb, "加内标|||移液信息", age + 1,
-                                      ["SS-A03", internal_standard_used_rows -plate_counter , "B01-FY48", age, int(internalStandard_Volume),
+                ExcelUtils.modify_row(wb, table_name, age + 1+quencher_age,
+                                      ["A02-12", internal_standard_used_rows -plate_counter , "B01-FY48", age, int(internalStandard_Volume),
                                        pipette_location, gun_head + 1], start_col=1)
                 # self.usage_12_hole = internal_standard_used_rows - int(internalStandard_Volume_num)
         if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -3409,10 +3458,10 @@ def main(id,post_data: dict,source) -> None:
     processor = ReactionProcessor(id,post_data)
     processor.process(source)
 
-    if source ==1:
-        ExcelUtils.batch_repair_folder(BASE_PATH)
-    else:
-        ExcelUtils.batch_repair_folder(crystallize_BASE_PATH)
+    # if source ==1:
+    #     ExcelUtils.batch_repair_folder(BASE_PATH)
+    # else:
+    #     ExcelUtils.batch_repair_folder(crystallize_BASE_PATH)
 
 if __name__ == "__main__":
     #逆合成
@@ -36470,9 +36519,9 @@ if __name__ == "__main__":
         "quenchingAgentData": [
             {
                 "name": "llwc",
-                "moles": "",
+                "moles": "2",
                 "molecularWeight": "",
-                "addVolume": "100",
+                "addVolume": "200",
                 "quencherConcentration": "",
                 "quenchVolume": "",
                 "quencherQuality": ""
@@ -36483,41 +36532,20 @@ if __name__ == "__main__":
                 "name": "llwc1",
                 "moles": "",
                 "molecularWeight": "",
-                "addVolume": "100",
+                "addVolume": "200",
                 "internalConcentration": "",
                 "internalVolume": "",
                 "internalQuality": ""
             }
         ],
         "productDilutionData": [
-            {
-                "name": "Benzene",
-                "beforeConcentration": "",
-                "afterConcentration": "",
-                "procedure": {
-                    "diluent1": "100",
-                    "diluent2": "100",
-                    "diluent3": "100",
-                    "diluent4": "100",
-                    "diluent5": "100"
-                }
-            }
+
         ],
         "extractionData": [
-            {
-                "name": "Acetone",
-                "volume": "200",
-                "time": "",
-                "times": "",
-                "type": "2",
-                "density": "0.791"
-            }
+
         ],
         "filtrationData": [
-            {
-                "name": "硅藻土",
-                "filterTime": "30"
-            }
+
         ]
     },
     "experimentLog4": {

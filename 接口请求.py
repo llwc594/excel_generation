@@ -15409,7 +15409,7 @@ response = requests.post(
     url,
     json=data1,
 )
-print(response.text)
+print(response)
 # name = response.headers.get('Content-Disposition').replace('attachment; filename=','')
 # # 处理流式响应
 # with open(rf"C:\Users\24017\PycharmProjects\pythonProject\接口测试\project/{name}", "wb") as f:

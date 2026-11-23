@@ -16,12 +16,11 @@ import os
 import shutil
 from pathlib import Path
 from typing import Any, List, Dict, Union
-import openpyxl
-from openpyxl.reader.excel import load_workbook
-from openpyxl.workbook import Workbook
+
 from typing import Dict, List, Any, Union, Tuple, Optional
 import xlwings as xw
-from openpyxl.styles import Alignment, Font, Border, Side
+from wolfxl import load_workbook, Workbook
+from wolfxl.styles import Alignment, Font, Border, Side
 
 import subprocess
 import os
@@ -66,7 +65,7 @@ class ExcelUtils:
     @staticmethod
     def open_workbook(file_path: str) -> Workbook:
         """打开Excel文件"""
-        return openpyxl.load_workbook(file_path)
+        return load_workbook(file_path)
 
     @staticmethod
     def save_workbook(workbook: Workbook, save_path: str) -> None:
@@ -98,7 +97,7 @@ class ExcelUtils:
     @staticmethod
     def copy_workbook(source_path: str, target_path: str) -> None:
         """复制Excel文件"""
-        wb = openpyxl.load_workbook(source_path)
+        wb = load_workbook(source_path)
         ExcelUtils.save_workbook(wb, target_path)
         print(f"文件已成功复制到: {target_path}")
 
@@ -151,14 +150,20 @@ class ExcelUtils:
             for i, value in enumerate(new_values, start=start_col):
                 sheet.cell(row=row_num, column=i).value = value
     @staticmethod
-    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict]) -> None:
+    def write_records_to_sheet(workbook: Workbook, sheet_name: str, records: List[dict], start_row: int = None) -> None:
         """将记录写入工作表"""
         sheet = workbook[sheet_name]
+        
+        # 如果不传 start_row，则默认找当前最大行 + 1
+        if start_row is None:
+            start_row = sheet.max_row + 1
+            
+        for i, record in enumerate(records):
+            row_vals = list(record.values())
+            # 显式遍历每一列，用 cell(row, col, value) 写入
+            for j, val in enumerate(row_vals):
+                sheet.cell(row=start_row + i, column=j + 1, value=val)
 
-        # 写入数据
-        for record in records:
-            row = list(record.values())
-            sheet.append(row)
 
     @staticmethod
     def clear_directory(folder_path: str) -> None:
@@ -741,23 +746,47 @@ class ReactionProcessor:
         return jaccard, length_sim, combined, intersection, common_names
 
     def _generate_excel_files(self) -> None:
+        def _blank(v):
+            return v is None or (isinstance(v, str) and v.strip() == '')
+
+        def _is_list_empty(items, key='name'):
+            items = items or []
+            return not any(isinstance(i, dict) and not _blank(i.get(key)) for i in items)
+
         """生成所有Excel文件"""
         if self.type == 1:
-            # 添加淬灭剂数据
-            print(111)
-            self._create_task_quencher()
-            # 添加内标数据
-            self._create_task_internal_standard()
+
+            experimentLog3 = self.post_data.get("experimentLog3",{})
+
+            if not experimentLog3.get("quenchingAgentData",[]) and not experimentLog3.get("internalStandardData",[]) and not experimentLog3.get("productDilutionData",[]) and _is_list_empty(experimentLog3.get("extractionData",[])) and _is_list_empty(experimentLog3.get("filtrationData",[])):
+                judge_excel = 'WF05'
+                print(f"只生成WF05移液表格，其它不生成")
+                pass
+            elif not experimentLog3.get("productDilutionData",[]) and _is_list_empty(experimentLog3.get("extractionData",[])) and  _is_list_empty(experimentLog3.get("filtrationData",[])):
+                judge_excel = 'WF02'
+                print(f"使用WF02表格，生成内标和淬灭液信息")
+            else:
+                judge_excel = 'WF11'
+                print(f"正常生成表格")
+            if judge_excel !="WF05":
+                # 添加淬灭剂数据
+                quencher_age = self._create_task_quencher(judge_excel)
+                # 添加内标数据
+                self._create_task_internal_standard(judge_excel,quencher_age)
             # 添加物料表信息
             self.data_list_24, self.data_list_12 = self._create_mate_info()
             # 添加任务表信息
             transfer_records_12, transfer_records_24, transfer_records_2 = self._create_w11_task()
-            # 添加任务配置
-            self._create_task_configuration()
-            # 添加稀释数据
-            self._create_dilution_data()
-            # 添加萃取
-            self._create_task_extract()
+
+            if judge_excel == 'WF11' or judge_excel == 'WF02' :
+                # 添加任务配置
+                self._create_task_configuration()
+                if judge_excel == 'WF11':
+                    # 添加稀释数据
+                    self._create_dilution_data()
+                    # 添加萃取
+                    self._create_task_extract()
+            
             # 添加sowo物料数据
             excel_list,excel_list_2 = self._create_sowo_edit_stuff()
             # 添加sowo任务数据
@@ -1055,7 +1084,7 @@ class ReactionProcessor:
         headers = ['sowo', '试剂', '编号', "信息"]
         ExcelUtils.modify_row(wb, 'Sheet', rowss, headers)
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data,start_row_idx)
         batch_start_rows = []
         for idx, item in enumerate(grouped_data):
             if item["sowo"]:  # 批次标题行
@@ -1132,7 +1161,7 @@ class ReactionProcessor:
 
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data, grouped_data)
 
         # 合并所有批次的单元格并设置居中
 
@@ -1240,7 +1269,6 @@ class ReactionProcessor:
 
         return result_1, data_list_12
 
-
     def process_plate_stack(
             self,
             file_path: str,
@@ -1256,7 +1284,7 @@ class ReactionProcessor:
         1. 根据传入的 fill_cells 列表批量标黄单元格。
         2. 根据 plate_type / condition 修改 D2, E2, F2 的值（逻辑保持不变）。
         """
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path)
         if "PlateStack" not in wb.sheetnames:
             raise ValueError("工作簿中不存在 'PlateStack' 子表")
         ws = wb["PlateStack"]
@@ -2457,16 +2485,26 @@ class ReactionProcessor:
                     required_volume -= transfer_vol
         return transfer_records_12, transfer_records_24, transfer_records_2
 
-    def _create_task_quencher(self):
-
+    def _create_task_quencher(self,judge_excel):
+        if judge_excel == 'WF05':
+            
+            ExcelUtils.copy_workbook(
+            f"{BASE_PATH1}/hiwo任务05-8-24.xlsx",
+            TEMPLATE_PATHS["wf11"])
+        elif judge_excel =='WF02':
+            ExcelUtils.copy_workbook(
+            f"{BASE_PATH1}/hiwo任务02.xlsx",
+            TEMPLATE_PATHS["wf11"])
+        else:
+            ExcelUtils.copy_workbook(
+            f"{BASE_PATH1}/hiwo任务11-8-24.xlsx",
+            TEMPLATE_PATHS["wf11"]
+        )
         ExcelUtils.copy_workbook(
             f"{BASE_PATH1}/hiwo物料-8.xlsx",
             TEMPLATE_PATHS["mate_info2"]
         )
-        ExcelUtils.copy_workbook(
-            f"{BASE_PATH1}/hiwo任务11-8-24.xlsx",
-            TEMPLATE_PATHS["wf11"]
-        )
+
         # 淬灭剂
         quenchingAgentData = self.post_data['experimentLog3']["quenchingAgentData"]
 
@@ -2520,6 +2558,7 @@ class ReactionProcessor:
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)
             ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["wf11"])
+            return age
 
     def modify_stack_table(self,transfer_records_12,transfer_records_24,transfer_records_2,BASE_PATH_1,BASE_PATH_2):
         fill_cells = []
@@ -2560,7 +2599,7 @@ class ReactionProcessor:
             condition=self.post_data,
 
         )
-    def _create_task_internal_standard(self):
+    def _create_task_internal_standard(self,judge_excel,quencher_age):
         # 内标数据
         internalStandardData = self.post_data['experimentLog3']["internalStandardData"]
         if not internalStandardData:
@@ -2619,8 +2658,14 @@ class ReactionProcessor:
         wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf11"])
 
         for age in range(1, self.hole_number + 1):
+            if judge_excel =='WF02':
+                table_name = '加淬灭液|||移液信息'
+            else:
+                quencher_age = 0
+                table_name = '加内标|||移液信息'
             if internalStandard_Type:
-                ExcelUtils.modify_row(wb, "加内标|||移液信息", age + 1,
+
+                ExcelUtils.modify_row(wb, table_name, age + 1+quencher_age,
                                       ["R12-A02", internal_standard_used_rows - 1, "FY24-B01", age,
                                        int(internalStandard_Volume) / 2,
                                        pipette_location, gun_head + 1], start_col=1)
@@ -2631,7 +2676,7 @@ class ReactionProcessor:
                     vol = internal_standard_used_rows - 1
                 else:
                     vol = internal_standard_used_rows - 2
-                ExcelUtils.modify_row(wb, "加内标|||移液信息", age + 1,
+                ExcelUtils.modify_row(wb, table_name, age + 1 + quencher_age,
                                       ["R12-A02", vol, "FY24-B01", age, int(internalStandard_Volume) / 2,
                                        pipette_location, gun_head + 1], start_col=1)
                 self.usage_12_hole = internal_standard_used_rows - 2
@@ -2671,7 +2716,7 @@ class ReactionProcessor:
                 except:
                     start = 1 + age
                 ExcelUtils.modify_row(wb, "加稀释液-过滤|||移液信息", start,
-                                      ["R12-A02", internal_standard_used_rows - 1, "GL96-2A01", age, 100,
+                                      ["R12-A02", internal_standard_used_rows - 1, "GL24-2A01", age, 100,
                                        pipette_location, gun_head + 1], start_col=1)
                 self.usage_12_hole = internal_standard_used_rows - 1
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -2736,11 +2781,11 @@ class ReactionProcessor:
                            其中 Locate 为 1~24 的整数，对应 B2:G5 的行优先顺序
         """
         environment = self.post_data['experimentLog2']['ReactionConditions']['environment']
-        wb = openpyxl.load_workbook(file_path)
+        wb = load_workbook(file_path)
         if environment =='2':
             table_name='HopperStack'
         else:
-            if len(excel_list) >=5:
+            if len(excel_list) >5:
                 table_name = 'HopperStack'
             else:
                 table_name='TransferHopperStack'
@@ -3000,7 +3045,7 @@ class ReactionProcessor:
 
             self._process_diluent(wb, "加稀释液-反应|||移液信息", procedure.get("diluent1"), True)
             self._process_diluent(wb, "加稀释液-中转|||移液信息", procedure.get("diluent2"), True, "ZZ-B02")
-            self._process_diluent(wb, "加稀释液-过滤|||移液信息", procedure.get("diluent3"), False, "GL96-2A01")
+            self._process_diluent(wb, "加稀释液-过滤|||移液信息", procedure.get("diluent3"), False, "GL24-2A01")
 
             self._process_mixing(wb, procedure.get("diluent4"), procedure.get("diluent5"))
 
@@ -3043,10 +3088,13 @@ class ReactionProcessor:
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i,
                                   ["FY24-B01", num, "ZZ-B02", num, int(diluent4) / 2, pipette_location, gun_head + 1])
             ExcelUtils.modify_row(wb, '反应板混匀|||移液信息', i + 1,
-                                  ["ZZ-B02", num, "GL96-2A01", num, int(diluent5), pipette_location, gun_head + 1])
+                                  ["ZZ-B02", num, "GL24-2A01", num, int(diluent5), pipette_location, gun_head + 1])
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
                 self.gun_head_dict[pipette_location].append(gun_head + 1)
+
+    EXTRACTION_DATA_FIELDS = ('name', 'volume', 'time', 'times')
+
 
 
 
@@ -3094,12 +3142,12 @@ def main(id,post_data: dict,source) -> None:
     processor = ReactionProcessor(id,post_data)
     processor.process(source)
 
-    if source ==1:
-        # ExcelUtils._repair_with_libreoffice(BASE_PATH)
-        ExcelUtils.batch_repair_folder(BASE_PATH, backup=False)
-    else:
-        # ExcelUtils._repair_with_libreoffice(crystallize_BASE_PATH)
-        ExcelUtils.batch_repair_folder(crystallize_BASE_PATH, backup=False)
+    # if source ==1:
+    #     # ExcelUtils._repair_with_libreoffice(BASE_PATH)
+    #     ExcelUtils.batch_repair_folder(BASE_PATH, backup=False)
+    # else:
+    #     # ExcelUtils._repair_with_libreoffice(crystallize_BASE_PATH)
+    #     ExcelUtils.batch_repair_folder(crystallize_BASE_PATH, backup=False)
 
 if __name__ == "__main__":
     ddd = {
@@ -3350,6 +3398,82 @@ if __name__ == "__main__":
                 "liquidReagentConcentration": "液体",
                 "reactionMoleConcentration": None,
                 "singleCockAddVolume": "3",
+                "cas": "",
+                "intensity": None
+            },
+                       {
+                "rowId": "row_1776652981356_77",
+                "id": 3,
+                "type": "sub",
+                "smiles": "O=C(Cl)Cc1ccccc1",
+                "substance": "O=C(Cl)Cc1ccccc1",
+                "molecularFormula": "C8H7ClO",
+                "limitReagents": True,
+                "equivalent": 1,
+                "solvent": 154.6,
+                "reactionMoles": 1,
+                "reactionQuality": 154.6,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "rowId": "row_1776652981356_78",
+                "id": 3,
+                "type": "sub",
+                "smiles": "N[C@@H](CSC(c1ccccc1)(c1ccccc1)c1ccccc1)C(=O)O",
+                "substance": "N[C@@H](CSC(c1ccccc1)(c1ccccc1)c1ccccc1)C(=O)O",
+                "molecularFormula": "C22H21NO2S",
+                "limitReagents": False,
+                "equivalent": 1,
+                "solvent": 363.48,
+                "reactionMoles": 1,
+                "reactionQuality": 363.48,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "rowId": "row_1776652981356_79",
+                "id": 3,
+                "type": "reagent",
+                "smiles": "",
+                "substance": "试剂1,copper(I) bromide",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": "0.1",
+                "solvent": "231",
+                "reactionMoles": "0.10",
+                "reactionQuality": "23.10",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "rowId": "row_1776652981356_80",
+                "id": 3,
+                "type": "solvent",
+                "smiles": "",
+                "substance": "溶剂1,tetrahydrofuran",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": None,
+                "singleCockAddVolume": "16",
                 "cas": "",
                 "intensity": None
             }
@@ -3621,8 +3745,27 @@ if __name__ == "__main__":
     },
     "experimentLog3": {
         "coolingTime": "50",
-        "quenchingAgentData": [],
-        "internalStandardData": [],
+        "quenchingAgentData": [{
+            "wells" : "1" ,
+            "name" : "qwe" ,
+            "moles" : "200" ,
+            "molecularWeight" : "188" ,
+            "addVolume" : "200" ,
+            "quencherConcentration" : "188" ,
+            "quenchVolume" : "188" ,
+            "quencherQuality" : "186"
+            }],
+        "internalStandardData": [
+            { 
+
+            "name" : "mlcc" ,
+            "moles" : "188" ,
+            "molecularWeight" : "188" ,
+            "addVolume" : "200" ,
+            "internalConcentration" : "188" ,
+            "internalVolume" : "188" ,
+            "internalQuality" : "188"
+            }],
         "productDilutionData": [],
         "extractionData": [
             {
@@ -3719,7 +3862,820 @@ if __name__ == "__main__":
         ]
     }
 }
-    main('b606f8d9f73d4153bb532ff297533814',ddd,1)
+    aaa = {
+    "experimentLog1": {
+        "wellPlates": "8孔板20ml",
+        "SubstratesTableList": [
+            {
+                "id": 1,
+                "type": "sub",
+                "smiles": "Clc1cc(Cl)cc(Cl)c1",
+                "substance": "Clc1cc(Cl)cc(Cl)c1",
+                "molecularFormula": "",
+                "limitReagents": True,
+                "equivalent": 1,
+                "solvent": "",
+                "reactionMoles": 1,
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 1,
+                "type": "reagent",
+                "smiles": "",
+                "substance": "tetrakis(triphenylphosphine) palladium(0)",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": "1",
+                "solvent": "67",
+                "reactionMoles": "1.00",
+                "reactionQuality": "67.00",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 1,
+                "type": "solvent",
+                "smiles": "",
+                "substance": "1,4-dioxane",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "89",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "16.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 2,
+                "type": "sub",
+                "smiles": "Clc1cc(Cl)cc(Cl)c1",
+                "substance": "Clc1cc(Cl)cc(Cl)c1",
+                "molecularFormula": "",
+                "limitReagents": True,
+                "equivalent": 1,
+                "solvent": "",
+                "reactionMoles": 1,
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 2,
+                "type": "reagent",
+                "smiles": "",
+                "substance": "triethylamine",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": "",
+                "solvent": "",
+                "reactionMoles": "",
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "0.00",
+                "singleCockAddVolume": "2",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 2,
+                "type": "solvent",
+                "smiles": "",
+                "substance": "dichloromethane",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "14.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 3,
+                "type": "sub",
+                "smiles": "Clc1cc(Cl)cc(Cl)c1",
+                "substance": "Clc1cc(Cl)cc(Cl)c1",
+                "molecularFormula": "",
+                "limitReagents": True,
+                "equivalent": 1,
+                "solvent": "",
+                "reactionMoles": 1,
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 3,
+                "type": "reagent",
+                "smiles": "",
+                "substance": "potassium carbonate",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": "",
+                "solvent": "",
+                "reactionMoles": "",
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "0.00",
+                "singleCockAddVolume": "3",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 3,
+                "type": "solvent",
+                "smiles": "",
+                "substance": "octane",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "120",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "13.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 4,
+                "type": "sub",
+                "smiles": "Clc1cc(Cl)cc(Cl)c1",
+                "substance": "Clc1cc(Cl)cc(Cl)c1",
+                "molecularFormula": "",
+                "limitReagents": True,
+                "equivalent": 1,
+                "solvent": "",
+                "reactionMoles": 1,
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 4,
+                "type": "reagent",
+                "smiles": "",
+                "substance": "sodium methylate",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": "",
+                "solvent": "",
+                "reactionMoles": "",
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "0.00",
+                "singleCockAddVolume": "1",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 4,
+                "type": "solvent",
+                "smiles": "",
+                "substance": "methanol",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "3.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 4,
+                "type": "solvent",
+                "smiles": "",
+                "substance": " hexane",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "60",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "3.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 4,
+                "type": "solvent",
+                "smiles": "",
+                "substance": " chloroform",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "3.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 4,
+                "type": "solvent",
+                "smiles": "",
+                "substance": " water",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "3.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 4,
+                "type": "solvent",
+                "smiles": "",
+                "substance": " toluene",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "127",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "3.00",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 5,
+                "type": "sub",
+                "smiles": "Clc1cc(Cl)cc(Cl)c1",
+                "substance": "Clc1cc(Cl)cc(Cl)c1",
+                "molecularFormula": "",
+                "limitReagents": True,
+                "equivalent": 1,
+                "solvent": "81",
+                "reactionMoles": "1.00",
+                "reactionQuality": "81.00",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "固态",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 5,
+                "type": "reagent",
+                "smiles": "",
+                "substance": "pyridine",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": "",
+                "solvent": "",
+                "reactionMoles": "",
+                "reactionQuality": "",
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "0.00",
+                "singleCockAddVolume": "3",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 5,
+                "type": "solvent",
+                "smiles": "",
+                "substance": "dichloromethane",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "6.50",
+                "cas": "",
+                "intensity": None
+            },
+            {
+                "id": 5,
+                "type": "solvent",
+                "smiles": "",
+                "substance": " ethyl acetate",
+                "molecularFormula": "",
+                "limitReagents": None,
+                "equivalent": None,
+                "solvent": "219",
+                "reactionMoles": None,
+                "reactionQuality": None,
+                "reactionVolume": 16,
+                "liquidReagentConcentration": "液体",
+                "reactionMoleConcentration": "",
+                "singleCockAddVolume": "6.50",
+                "cas": "",
+                "intensity": None
+            }
+        ],
+        "MaterialsTableList": [
+            {
+                "type": "sub",
+                "substance": "Clc1cc(Cl)cc(Cl)c1",
+                "smiles": "Clc1cc(Cl)cc(Cl)c1",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "5.00",
+                "theoreticalQuality": "81.00",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "6.50",
+                "cas": "",
+                "intensity": None,
+                "id": 1,
+                "configurationVolume": "0.00",
+                "configurationQuality": "105.30",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "tetrakis(triphenylphosphine) palladium(0)",
+                "smiles": "",
+                "solvent": "67",
+                "molecularFormula": "",
+                "theoreticalMoles": "1.00",
+                "theoreticalQuality": "67.00",
+                "theoreticalVolume": "0.00",
+                "configurationMoles": "1.30",
+                "cas": "",
+                "intensity": None,
+                "id": 2,
+                "configurationVolume": "0.00",
+                "configurationQuality": "87.10",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "1,4-dioxane",
+                "smiles": "",
+                "solvent": "89",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "16.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 3,
+                "configurationVolume": "20.80",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "triethylamine",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "2.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 4,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "dichloromethane",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "20.50",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 5,
+                "configurationVolume": "26.65",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "potassium carbonate",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "3.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 6,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "octane",
+                "smiles": "",
+                "solvent": "120",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "13.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 7,
+                "configurationVolume": "16.90",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "sodium methylate",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "1.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 8,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": "methanol",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "3.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 9,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": " hexane",
+                "smiles": "",
+                "solvent": "60",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "3.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 10,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": " chloroform",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "3.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 11,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": " water",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "3.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 12,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": " toluene",
+                "smiles": "",
+                "solvent": "127",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "3.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 13,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "reagent",
+                "substance": "pyridine",
+                "smiles": "",
+                "solvent": "",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "3.00",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 14,
+                "configurationVolume": "5.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "solvent",
+                "substance": " ethyl acetate",
+                "smiles": "",
+                "solvent": "219",
+                "molecularFormula": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "6.50",
+                "configurationMoles": "0.00",
+                "cas": "",
+                "intensity": None,
+                "id": 15,
+                "configurationVolume": "8.45",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            }
+        ]
+    },
+    "experimentLog2": {
+        "ReactionConditions": {
+            "temperature": "120",
+            "time": "200",
+            "speed": "200",
+            "seal": "1",
+            "environment": "1"
+        },
+        "lightData": {
+            "type": "1",
+            "typeList": [
+                {
+                    "label": "照射方式1",
+                    "value": "1"
+                },
+                {
+                    "label": "照射方式2",
+                    "value": "2"
+                }
+            ],
+            "list": [
+                {
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
+                },
+                {
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
+                },
+                {
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
+                },
+                {
+                    "status": "1",
+                    "WattageStart": "",
+                    "WattageType": "",
+                    "time": [
+                        {
+                            "start": "",
+                            "end": ""
+                        }
+                    ]
+                }
+            ],
+            "show": True
+        },
+        "electricityData": {
+            "type": "1",
+            "list": [],
+            "show": True
+        },
+        "gasData": {
+            "name": "",
+            "pressure": "",
+            "time": "",
+            "show": True
+        }
+    },
+    "experimentLog3": {
+        "coolingTime": "82",
+        "quenchingAgentData": [
+            {
+                "name": "llwc",
+                "moles": "",
+                "molecularWeight": "",
+                "addVolume": "300",
+                "quencherConcentration": "",
+                "quenchVolume": "",
+                "quencherQuality": ""
+            }
+        ],
+        "internalStandardData": [
+            {
+                "name": "llwc1",
+                "moles": "",
+                "molecularWeight": "",
+                "addVolume": "400",
+                "internalConcentration": "",
+                "internalVolume": "",
+                "internalQuality": ""
+            }
+        ],
+        "productDilutionData": [],
+        "extractionData": [
+            {
+                "name": "o-Xylene",
+                "volume": "100",
+                "time": "30",
+                "times": "2",
+                "type": "2",
+                "density": "0.881"
+            }
+        ],
+        "filtrationData": [
+            {
+                "name": "",
+                "filterTime": ""
+            }
+        ]
+    },
+    "experimentLog4": {
+        "NMR": {
+            "analyseArr": [
+                {
+                    "name": "H NMR",
+                    "status": False
+                },
+                {
+                    "name": "C NMR",
+                    "status": False
+                },
+                {
+                    "name": "F NMR",
+                    "status": False
+                },
+                {
+                    "name": "P NMR",
+                    "status": False
+                },
+                {
+                    "name": "COSY",
+                    "status": False
+                },
+                {
+                    "name": "HSQC",
+                    "status": False
+                },
+                {
+                    "name": "HMBC",
+                    "status": False
+                },
+                {
+                    "name": "NOESY",
+                    "status": False
+                }
+            ],
+            "solvent": {
+                "name": "",
+                "volume": "",
+                "temperature": "",
+                "frequency": ""
+            }
+        },
+        "MS": [],
+        "LC": [],
+        "LCMS": [],
+        "GC": [],
+        "UV": [
+            {
+                "wavelengthStart": "",
+                "wavelengthEnd": "",
+                "velocity": "",
+                "width": "",
+                "solvent": "",
+                "concentration": ""
+            }
+        ],
+        "IR": [
+            {
+                "resolutionStart": "",
+                "resolutionEnd": "",
+                "scanNumber": "",
+                "Wavenumber": ""
+            }
+        ]
+    }
+}
+    
+    main('b606f8d9f73d4153bb532ff297533814',aaa,1)
 
 
 

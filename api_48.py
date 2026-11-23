@@ -11,6 +11,7 @@ import math
 
 from collections import defaultdict, OrderedDict
 from itertools import combinations
+from loguru import logger
 import pandas as pd
 import datetime
 import os
@@ -338,6 +339,8 @@ class ReactionProcessor:
         self.number_tasks = 2
         # 八孔板一共需要使用几个孔列
         self.hole_number = 0
+        #反应数量
+        self.reaction = 0
         # 记录sowo使用的物料对应的key
         self.name_key_dict = {}
         # self.manage_daily_file(BASE_PATH1)
@@ -792,6 +795,7 @@ class ReactionProcessor:
         # # self.perforated_plate = [sorted_keys[i:i + 8] for i in range(0, len(sorted_keys), 8)]
         # print(self.data_dict)
         temp_group = []
+        self.reaction = len(self.data_dict)
         for list_id in  self.data_dict.keys():
             # temp_group.append(None)
             temp_group.append(list_id)
@@ -1019,6 +1023,7 @@ class ReactionProcessor:
 
                 for col_idx, value in enumerate(material_data.iloc[3], start=17):
                     ws.cell(row=rows, column=col_idx, value=value)
+
                 for row_idx, row in hole_data_4.iterrows():
                     for col_idx, value in enumerate(row, start=17):
                         ws.cell(row=row_idx -15, column=col_idx, value=value)
@@ -3036,9 +3041,21 @@ class ReactionProcessor:
                         start = 1 + age
                 except:
                     start = 1 + age
-                ExcelUtils.modify_row(wb, "加稀释液-过滤|||移液信息", start,
-                                      ["A02-12", internal_standard_used_rows , "2A01-GL48", age, 100,
-                                       pipette_location, gun_head + 1], start_col=1)
+                ExcelUtils.write_records_to_sheet(
+                    wb, "加稀释液-过滤|||移液信息",
+                    [{
+                        "来源孔板条码": "A02-12",
+                        "来源孔板列Y": internal_standard_used_rows,
+                        "目标孔板条码": "2A01-GL48",
+                        "目标孔板列Y": age,
+                        "移液量(ul)": 100,
+                        "枪头库位": pipette_location,
+                        "枪头列Y": gun_head + 1,
+                    }]
+                )
+                # ExcelUtils.modify_row(wb, "加稀释液-过滤|||移液信息", start,
+                #                       ["A02-12", internal_standard_used_rows , "2A01-GL48", age, 100,
+                #                        pipette_location, gun_head + 1], start_col=1)
                 # self.usage_12_hole = internal_standard_used_rows - 1
 
             if gun_head + 1 not in self.gun_head_dict[pipette_location]:
@@ -3320,41 +3337,187 @@ class ReactionProcessor:
             df.to_excel(crystallize_TEMPLATE_PATHS["mate"], index=False)
 
 
-    def _create_dilution_data(self) -> None:
-        """创建稀释数据"""
-        product_dilution_data = self.post_data["experimentLog3"].get("productDilutionData", [])
 
-        for data in product_dilution_data:
-            wb = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf11"])
-            procedure = data.get("procedure", {})
+    def _create_dilution_data(self):
+        """创建稀释数据 - 适配 productDilutionData 新格式
 
-            self._process_diluent(wb, "加稀释液-反应|||移液信息", int(float(procedure.get("diluent1"))), True)
-            self._process_diluent(wb, "加稀释液-中转|||移液信息", int(float(procedure.get("diluent2"))), True, "B02-96")
-            self._process_diluent(wb, "加稀释液-过滤|||移液信息", int(float(procedure.get("diluent3"))), False, "2A01-GL48")
-            #反应板混匀
-            self._process_mixing(wb, int(float(procedure.get("diluent4"))), int(float(procedure.get("diluent5"))))
+        diluent1~3: {name, amount}   → 走 _process_diluent，按槽取液
+        diluent4~5: {amount}         → 走 _process_mixing（保持原逻辑）
 
-            ExcelUtils.save_workbook(wb, TEMPLATE_PATHS["wf11"])
+        槽位规则（8孔，每槽 75ml = 75000ul）：
+        - 同试剂去重，每个试剂按总需求分配 ceil(total/75000) 个槽
+        - well 号顺序连续（1,2,3,...），对应 E62,E63,E64,...
+        - 取液时从该试剂槽队列找"剩余容量够"的槽，不够自动切下一个
+        """
+        DILUENT_SHEET_MAP = {
+            1: ("加稀释液-反应|||移液信息", True,  "B01-FY96"),
+            2: ("加稀释液-中转|||移液信息", True,  "B02-96"),
+            3: ("加稀释液-过滤|||移液信息", True, "2A01-GL96"),
+        }
+        DILUENT_SLOT_CAPACITY_UL = 75000   # 8孔实验，一孔容量 75ml
+        DILUENT_MATERIAL_START_ROW = 118    # 物料表 E62 起
 
-    def _process_diluent(self, wb: Workbook, sheet_name: str, diluent: Optional[str], judge, kk="B01-FY48") -> None:
-        """处理稀释剂"""
-        if not diluent:
+        exp_key = 'experimentLog3' if 'experimentLog3' in self.post_data else 'experimentLog2'
+        productDilutionData = self.post_data.get(exp_key, {}).get('productDilutionData', []) or []
+        if not productDilutionData:
             return
 
-        diluent = int(float(diluent))
-        pipette_location = "A04" if int(diluent) <= 200 else "A05"
-        if len(self.gun_head_dict[pipette_location]) >= 12:
-            pipette_location = "B04" if pipette_location == "A04" else "B05"
+        # ---------- 1. 收集 diluent1~3 试剂名，按试剂汇总总需求 ----------
+        reagent_total_need = {}     # name -> 总 ul
+        reagent_order = []
+        for item in productDilutionData:
+            procedure = item.get('procedure') or {}
+            for i in (1, 2, 3):
+                d = procedure.get(f'diluent{i}') or {}
+                name = (d.get('name') or '').strip()
+                amount_str = str(d.get('amount') or '').strip()
+                if not name or not amount_str:
+                    continue
+                try:
+                    amount = float(amount_str)
+                except (ValueError, TypeError):
+                    continue
+                if amount <= 0:
+                    continue
+                if name not in reagent_total_need:
+                    reagent_total_need[name] = 0.0
+                    reagent_order.append(name)
+                # ★ 关键修正：amount 是"每孔加量"，总需求 = amount × reaction
+                reagent_total_need[name] += amount * self.reaction
 
-        gun_head = self.gun_head_dict[pipette_location][-1] if self.gun_head_dict[pipette_location] else 0
-        num = 0
-        for i in range(2, self.hole_number + 2):
-            num += 1
-            ExcelUtils.modify_row(wb, sheet_name, i,
-                                  ["B03-1", 1, kk, num, int(diluent), pipette_location, gun_head + 1])
-        if gun_head + 1 not in self.gun_head_dict[pipette_location]:
-            self.gun_head_dict[pipette_location].append(gun_head + 1)
+        if not reagent_order:
+            logger.info("[dilution] 无 diluent1~3 数据，跳过物料表")
+            reagent_slots = {}
+        else:
+            # ---------- 2. 分配槽位 ----------
+            # 每试剂至少 1 槽；超 75000ul 按 ceil 追加
+            reagent_slots = {}       # name -> [[well_no, used_ul, cap_ul], ...]
+            material_rows = []       # [(excel_row, name), ...]
 
+            next_well = 1
+            for name in reagent_order:
+                total_need = reagent_total_need[name]
+                n_slots = max(1, math.ceil(total_need / DILUENT_SLOT_CAPACITY_UL))
+                slots = []
+                for _ in range(n_slots):
+                    excel_row = (DILUENT_MATERIAL_START_ROW - 1) + next_well  # well=1 → 62
+                    material_rows.append((excel_row, name))
+                    slots.append([next_well, 0.0, float(DILUENT_SLOT_CAPACITY_UL)])
+                    next_well += 1
+                reagent_slots[name] = slots
+
+            logger.info(
+                f"[dilution] 槽位分配: "
+                f"{[(name, [s[0] for s in slots]) for name, slots in reagent_slots.items()]}"
+            )
+
+            # ---------- 3. 写物料表（每个槽一行，同试剂多槽就多行同名） ----------
+            wb_mat = ExcelUtils.open_workbook(TEMPLATE_PATHS["mate_info2"])
+            for excel_row, name in material_rows:
+                ExcelUtils.modify_cell(wb_mat, "孔位信息", f'D{excel_row}', name)
+            ExcelUtils.save_workbook(wb_mat, TEMPLATE_PATHS["mate_info2"])
+
+
+        # ---------- 5. 逐个 product / diluent 生成移液记录 ----------
+        wb_task = ExcelUtils.open_workbook(TEMPLATE_PATHS["wf11"])
+
+        def acquire_wells(name, total_need_ul):
+            """
+            把 total_need_ul 分配到各槽，允许跨槽。
+            返回: [(well_no, taken_ul), ...]，taken_ul = 该槽提供的量
+                容量不足返回 None
+            """
+            remaining = total_need_ul
+            segments = []
+            for slot in reagent_slots.get(name, []):
+                if remaining <= 0:
+                    break
+                well_no, used, cap = slot
+                available = cap - used
+                take = min(available, remaining)
+                if take > 0:
+                    segments.append((well_no, take))
+                    slot[1] += take
+                    remaining -= take
+            return segments if remaining <= 0 else None
+
+
+        n_diluent = 0
+        n_mixing = 0
+
+
+        for idx, item in enumerate(productDilutionData, 1):
+            num = idx
+            procedure = item.get('procedure') or {}
+
+            for i in (1, 2, 3):
+                d = procedure.get(f'diluent{i}') or {}
+                name = (d.get('name') or '').strip()
+                amount_str = str(d.get('amount') or '').strip()
+                if not name or not amount_str:
+                    continue
+                try:
+                    amount_per_hole = float(amount_str)         # 每孔加量（如 5000）
+                except (ValueError, TypeError):
+                    continue
+                if amount_per_hole <= 0:
+                    continue
+
+                # ★ 总需求 = 每孔量 × 孔数
+                total_need = amount_per_hole * self.reaction
+                segments = acquire_wells(name, total_need)
+                if segments is None:
+                    logger.error(
+                        f"[dilution] 产品#{idx} diluent{i}={name} 需 {total_need}ul "
+                        f"但槽总容量不够"
+                    )
+                    continue
+
+                logger.info(
+                    f"[dilution] 产品#{idx} diluent{i}={name} 总需 {total_need}ul, "
+                    f"槽分配 {segments}"
+                )
+
+                sheet_name, flag, plate_code = DILUENT_SHEET_MAP[i]
+                self._process_diluent(
+                    wb_task, sheet_name, flag, segments,
+                    kk=plate_code, num=num
+                )
+        self._process_mixing(wb_task, int(float(procedure.get("diluent4",{}).get("amount",''))), int(float(procedure.get("diluent5",{}).get("amount",''))))
+        ExcelUtils.save_workbook(wb_task, TEMPLATE_PATHS["wf11"])
+        logger.info(f"[dilution] 完成：_process_diluent {n_diluent} 条，_process_mixing {n_mixing} 条")
+   
+    def _process_diluent(self, wb: Workbook, sheet_name: str,
+                     judge, well_segments, kk="B01-FY48", num=None) -> None:
+        """
+        well_segments: [(well_no, taken_ul), ...] 每个槽一段
+        num         : 目标孔板列Y（产品位置）
+        """
+        if not well_segments or num is None:
+            return
+
+        for well_no, taken_ul in well_segments:
+            per_hole = taken_ul / self.reaction         # 每孔移液量
+            pipette_location = "A04" if per_hole <= 200 else "A05"
+            if len(self.gun_head_dict[pipette_location]) >= 12:
+                pipette_location = "B04" if pipette_location == "A04" else "B05"
+            gun_head = (self.gun_head_dict[pipette_location][-1]
+                        if self.gun_head_dict[pipette_location] else 0)
+
+            record = {
+                "来源孔板条码": "R1-B03",
+                "来源孔板列Y": well_no,
+                "目标孔板条码": kk,          
+                "目标孔板列Y": num,
+                "移液量(ul)": int(round(per_hole)),
+                "枪头库位": pipette_location,
+                "枪头列Y": gun_head + 1,
+            }
+            ExcelUtils.write_records_to_sheet(wb, sheet_name, [record])
+
+            if gun_head + 1 not in self.gun_head_dict[pipette_location]:
+                self.gun_head_dict[pipette_location].append(gun_head + 1)
+                
     def _process_mixing(self, wb: Workbook, diluent4: Optional[str], diluent5: Optional[str]) -> None:
         """处理混合"""
         if not diluent4 or not diluent5:
@@ -36505,16 +36668,15 @@ if __name__ == "__main__":
         ],
         "productDilutionData": [
             {
-                "name": "Benzene",
-                "beforeConcentration": "",
-                "afterConcentration": "",
-                "procedure": {
-                    "diluent1": "100",
-                    "diluent2": "100",
-                    "diluent3": "100",
-                    "diluent4": "100",
-                    "diluent5": "100"
-                }
+            "beforeConcentration": "",
+            "afterConcentration": "",
+            "procedure": {
+                "diluent1": { "name": "Water",    "amount": "500" },
+                "diluent2": { "name": "Acetone", "amount": "600" },
+                "diluent3": { "name": "mecn",      "amount": "400" },
+                "diluent4": { "amount": "100" },
+                "diluent5": { "amount": "100" }
+            }
             }
         ],
         "extractionData": [

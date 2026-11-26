@@ -42,7 +42,9 @@
     "20261102": 5,
     "20261103": 4,
     "20261105": 0,
-    "20261106": 0
+    "20261106": 0,
+    "20261125": 27,
+    "20261126": 0
   },
   "materials": {
     "Sodium hydroxide": "20260506-001",
@@ -280,6 +282,33 @@
     "tetrakis(triphenylphosphine) palladium(0)": "20261103-001",
     "Clc1cc(Cl)cc(Cl)c1": "20261103-002",
     "pyridine!methanol!jones reagent!amberlyst-15": "20261103-003",
-    "N,N-dimethyl-4-aminopyridine!dicyclohexyl-carbodiimide": "20261103-004"
+    "N,N-dimethyl-4-aminopyridine!dicyclohexyl-carbodiimide": "20261103-004",
+    "o-Xylene": "20261125-001",
+    "Hexane": "20261125-002",
+    "toluene": "20261125-003",
+    "diethylamine": "20261125-004",
+    "Acetone": "20261125-005",
+    "benzene": "20261125-006",
+    "triethylamine": "20261125-007",
+    "acetonitrile": "20261125-008",
+    "dimethyl sulfoxide": "20261125-009",
+    "tetrahydrofuran": "20261125-010",
+    "Trifluoroacetic Acid": "20261125-011",
+    "Oxalic acid dihydrate": "20261125-012",
+    "N-Methylmorpholine": "20261125-013",
+    "xylene": "20261125-014",
+    "dichloromethane": "20261125-015",
+    "carbon dioxide": "20261125-016",
+    "N,N-dimethyl-formamide": "20261125-017",
+    "Hydrochloric Acid": "20261125-018",
+    "Diethyl Ether": "20261125-019",
+    "Potassium dihydrogen phosphate": "20261125-020",
+    "1-methyl-pyrrolidin-2-one": "20261125-021",
+    "Copper(II) sulfate pentahydrate": "20261125-022",
+    "Potassium iodide": "20261125-023",
+    "Barium sulfate": "20261125-024",
+    "butan-1-ol": "20261125-025",
+    "water": "20261125-026",
+    "Sodium acetate": "20261125-027"
   }
 }

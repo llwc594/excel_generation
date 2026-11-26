@@ -34,8 +34,8 @@ import aspose.cells as ac
 
 BASE_PATH = r"./generation_zy"
 BASE_PATH1 = r"./逆合成"
-crystallize_BASE_PATH = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/表格生成/结晶平台"
-crystallize_BASE_PATH1 = r"C:/Users/24017/PycharmProjects/pythonProject/接口测试/模板/结晶平台"
+crystallize_BASE_PATH = r"./generation_zy"
+crystallize_BASE_PATH1 = r"./结晶平台"
 TEMPLATE_PATHS = {
     "wf11": f"{BASE_PATH}/hiwo-任务2.xlsx",
     "wf05": f"{BASE_PATH}/hiwo-任务1.xlsx",
@@ -68,11 +68,17 @@ class ExcelUtils:
         return load_workbook(file_path)
 
     @staticmethod
-    def save_workbook(workbook: Workbook, save_path: str) -> None:
-        """保存Excel文件"""
-        Path(save_path).parent.mkdir(parents=True, exist_ok=True)
-        workbook.save(save_path)
+    def save_workbook(workbook, save_path):
+        save_path = os.path.abspath(save_path)
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
+        tmp_path = save_path + ".tmp.xlsx"
+        try:
+            workbook.save(tmp_path)          # source_path(原路径) != tmp_path，copyfile 不会自复制
+            os.replace(tmp_path, save_path)  # 原子替换，原文件不会中途被截断
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
     @staticmethod
     def delete_file(file_path: str) -> bool:
         """删除指定路径的文件
@@ -1161,7 +1167,7 @@ class ReactionProcessor:
 
         # 写入分组数据
         start_row_idx = rowss + 1  # 数据起始行（表头下一行）
-        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data, grouped_data)
+        ExcelUtils.write_records_to_sheet(wb, 'Sheet', grouped_data, start_row_idx)
 
         # 合并所有批次的单元格并设置居中
 
@@ -1735,7 +1741,7 @@ class ReactionProcessor:
             # 物料模板
             excel_name = fr"{crystallize_BASE_PATH}/hiwo-物料3-1.xlsx"
             ExcelUtils.copy_workbook(
-                f"{crystallize_BASE_PATH1}/hiwo-物料模板-8.xlsx",
+                f"{crystallize_BASE_PATH1}/hiwo物料-8-02.xlsx",
                 excel_name
             )
 
@@ -1927,7 +1933,7 @@ class ReactionProcessor:
                 key_dict.update({data['hole_id']: data})
             excel_name = fr"{crystallize_BASE_PATH}/hiwo-物料3-1.xlsx"
             ExcelUtils.copy_workbook(
-                f"{crystallize_BASE_PATH1}/hiwo-物料模板.xlsx",
+                f"{crystallize_BASE_PATH1}/hiwo物料-8-02.xlsx",
                 excel_name
             )
             wb = ExcelUtils.open_workbook(excel_name)
@@ -2587,9 +2593,9 @@ class ReactionProcessor:
             fill_cells.append("F2")
             fill_cells.append("F3")
 
-        extractionData = self.post_data['experimentLog3']["extractionData"]
-        if extractionData and 'F5' not in fill_cells:
-            fill_cells.append("F5")
+        # extractionData = self.post_data['experimentLog3']["extractionData"]
+        # if extractionData and 'F5' not in fill_cells:
+        #     fill_cells.append("F5")
 
         self.process_plate_stack(
             file_path=fr"{BASE_PATH_1}/Materials-stack4列.xlsx",
@@ -2780,17 +2786,22 @@ class ReactionProcessor:
         :param excel_list: 列表，每个元素为字典，包含 'Code', 'Locate', 'Type'
                            其中 Locate 为 1~24 的整数，对应 B2:G5 的行优先顺序
         """
-        environment = self.post_data['experimentLog2']['ReactionConditions']['environment']
+        # if self.type == 1:
+        #     name = "ReactionConditions"
+        # else:
+        #     name = "dissolveForm"
+        # environment = self.post_data['experimentLog2'][name]['environment']
+        # wb = load_workbook(file_path)
+        # if environment =='2':
+        #     table_name='HopperStack'
+        # else:
+        #     if len(excel_list) >5:
+        #         table_name = 'HopperStack'
+        #     else:
+        #         table_name='TransferHopperStack'
+
+        table_name='HopperStack'
         wb = load_workbook(file_path)
-        if environment =='2':
-            table_name='HopperStack'
-        else:
-            if len(excel_list) >5:
-                table_name = 'HopperStack'
-            else:
-                table_name='TransferHopperStack'
-
-
         if table_name not in wb.sheetnames:
             raise ValueError(f"工作簿中不存在 {table_name} 子表")
         ws = wb[table_name]
@@ -2821,7 +2832,8 @@ class ReactionProcessor:
                 ws.cell(row=row, column=col).fill = yellow_fill
 
         # 如果总数据不足25格，剩余格子保持空白（或可根据需求填写其他内容）
-        wb.save(output_path)
+        ExcelUtils.save_workbook(wb, output_path)
+
         print(f"处理完成，保存至: {output_path}")
     def set_hopper_b2_with_utils(self,file_path: str, output_path: str, value) -> None:
         """
@@ -4674,8 +4686,199 @@ if __name__ == "__main__":
         ]
     }
 }
-    
-    main('b606f8d9f73d4153bb532ff297533814',aaa,1)
+    ccc = {
+    "experimentLog1": {
+        "wellPlates": "8孔板20ml",
+        "SubstratesTableList": [
+            {
+                "id": 1,
+                "type": "固体物料",
+                "substance": "nacl",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "moles": "",
+                "smile": "",
+                "intensity": "3.14",
+                "cas": "",
+                "quality": "",
+                "Volume": "",
+                "moleConcentration": "",
+                "singleCockAddVolume": ""
+            },
+            {
+                "id": 1,
+                "type": "液体物料",
+                "substance": "h2o",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "moles": "",
+                "smile": "",
+                "intensity": "",
+                "cas": "",
+                "quality": "",
+                "Volume": "16.00",
+                "moleConcentration": "",
+                "singleCockAddVolume": "4"
+            },
+            {
+                "id": 1,
+                "type": "溶剂",
+                "substance": "caco3",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "moles": "",
+                "intensity": "",
+                "smile": "",
+                "cas": "",
+                "quality": "",
+                "Volume": "16.00",
+                "moleConcentration": "",
+                "singleCockAddVolume": "6"
+            },
+            {
+                "id": 1,
+                "type": "反溶剂",
+                "substance": "1111",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "moles": "",
+                "intensity": "",
+                "smile": "",
+                "cas": "",
+                "quality": "",
+                "Volume": "16.00",
+                "moleConcentration": "",
+                "singleCockAddVolume": "6"
+            }
+        ],
+        "MaterialsTableList": [
+            {
+                "type": "固体物料",
+                "substance": "nacl",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "cas": "",
+                "smile": "",
+                "intensity": "3.14",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "0.00",
+                "id": 1,
+                "configurationVolume": "0.00",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "液体物料",
+                "substance": "h2o",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "cas": "",
+                "smile": "",
+                "intensity": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "4.00",
+                "id": 2,
+                "configurationVolume": "5.20",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "溶剂",
+                "substance": "caco3",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "cas": "",
+                "smile": "",
+                "intensity": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "6.00",
+                "id": 3,
+                "configurationVolume": "7.80",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            },
+            {
+                "type": "反溶剂",
+                "substance": "1111",
+                "molecularFormula": "",
+                "molecularWeight": "",
+                "cas": "",
+                "smile": "",
+                "intensity": "",
+                "theoreticalMoles": "0.00",
+                "theoreticalQuality": "0.00",
+                "theoreticalVolume": "6.00",
+                "id": 4,
+                "configurationVolume": "7.80",
+                "configurationQuality": "0.00",
+                "concentration": ""
+            }
+        ],
+        "isType": "1"
+    },
+    "experimentLog2": {
+        "dissolveForm": {
+            "temperature": "-1",
+            "maxTemperature": "30",
+            "time": "60",
+            "speed": "",
+            "rjSpeed": "700",
+            "seal": "1",
+            "environment": "1",
+            "dissolve": "1",
+            "dissolveTimeInterval": "30",
+            "dissolveMaximum": "3",
+            "dissolveGradient": 5
+        },
+        "postProcessingForm": {
+            "time": "30",
+            "temperature": "40",
+            "maxTemperature": "",
+            "speed": "800",
+            "method": "1",
+            "precipitate": "1",
+            "precoolingTemperature": "5"
+        },
+        "filtrationForm": {
+            "type": "硅胶",
+            "time": "60"
+        }
+    },
+    "experimentLog3": {
+        "dissolveForm": {
+            "temperature": "",
+            "maxTemperature": "",
+            "time": "",
+            "speed": "",
+            "rjSpeed": "",
+            "seal": "1",
+            "environment": "1",
+            "dissolve": "1",
+            "dissolveTimeInterval": "",
+            "dissolveMaximum": "",
+            "dissolveGradient": ""
+        },
+        "postProcessingForm": {
+            "time": "",
+            "maxTemperature": "",
+            "preCooling": "1",
+            "temperature": "",
+            "speed": "",
+            "precipitate": "",
+            "dissolveTimeInterval": "",
+            "dissolveMaximum": "",
+            "dissolveGradient": ""
+        },
+        "filtrationForm": {
+            "type": "",
+            "time": ""
+        }
+    }
+}
+    main('b606f8d9f73d4153bb532ff297533814',ccc,2)
 
 
 
